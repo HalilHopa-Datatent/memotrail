@@ -60,20 +60,16 @@ Done. Start a new session and ask: *"What did we work on last week?"*
 
 ## How It Works
 
-```
-┌─────────────────┐     ┌──────────────────┐     ┌─────────────────────────┐
-│  You code with   │────▶│  MemoTrail records │────▶│  Chunk & embed messages  │
-│   Claude Code    │     │   the session      │     │  (all-MiniLM-L6-v2)      │
-└─────────────────┘     └──────────────────┘     └────────────┬────────────┘
-        ▲                                                      │
-        │                                                      ▼
-┌─────────────────┐     ┌──────────────────┐     ┌─────────────────────────┐
-│ Relevant context │◀────│  Semantic search   │◀────│  Store locally           │
-│ surfaces in chat │     │  (ChromaDB)        │     │  (ChromaDB + SQLite)     │
-└─────────────────┘     └──────────────────┘     └─────────────────────────┘
+```mermaid
+flowchart LR
+    A["🖥️ You code\nwith Claude"] -- record --> B["📝 MemoTrail\ncaptures session"]
+    B -- chunk --> C["🧠 Embed messages\n(all-MiniLM-L6-v2)"]
+    C -- store --> D["💾 ChromaDB\n+ SQLite"]
+    D -- next session --> E["🔍 Semantic\nsearch"]
+    E -- surface --> A
 ```
 
-All processing happens locally. No cloud, no API keys, no data leaves your machine.
+> **100% local** — no cloud, no API keys, no data leaves your machine.
 
 ## Available Tools
 
