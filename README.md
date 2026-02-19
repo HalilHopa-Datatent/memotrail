@@ -45,14 +45,12 @@ AI:  "Based on session from Jan 15 — you evaluated Redis vs Memcached.
 # 1. Install
 pip install memotrail
 
-# 2. Index your existing Claude Code history
-memotrail index
-
-# 3. Connect to Claude Code
+# 2. Connect to Claude Code
 claude mcp add memotrail -- memotrail serve
 ```
 
-Done. Start a new session and ask: *"What did we work on last week?"*
+That's it. MemoTrail automatically indexes your history on first launch.
+Start a new session and ask: *"What did we work on last week?"*
 
 <div align="center">
 <img src="demo.gif" alt="MemoTrail Demo" width="800">
@@ -62,7 +60,7 @@ Done. Start a new session and ask: *"What did we work on last week?"*
 
 | Step | What happens |
 |:----:|:-------------|
-| **1. Record** | MemoTrail captures every Claude Code session automatically |
+| **1. Record** | MemoTrail auto-indexes new sessions every time the server starts |
 | **2. Chunk** | Conversations are split into meaningful segments |
 | **3. Embed** | Each chunk is embedded using `all-MiniLM-L6-v2` (~80MB, runs on CPU) |
 | **4. Store** | Vectors go to ChromaDB, metadata to SQLite — all under `~/.memotrail/` |
@@ -87,10 +85,10 @@ Once connected, Claude Code gets these MCP tools:
 ## CLI Commands
 
 ```bash
-memotrail index                          # Index existing Claude Code history
+memotrail serve                          # Start MCP server (auto-indexes new sessions)
 memotrail search "redis caching decision"  # Search from terminal
 memotrail stats                          # View indexing stats
-memotrail serve                          # Start MCP server
+memotrail index                          # Manually re-index (optional)
 ```
 
 ## Architecture
@@ -112,8 +110,8 @@ memotrail serve                          # Start MCP server
 
 | | MemoTrail | CLAUDE.md / Rules files | Manual notes |
 |---|---|---|---|
-| Automatic | Yes — records everything | No — you write it | No |
-| Searchable | Semantic search | Ctrl+F only | Ctrl+F only |
+| Automatic | Yes — indexes on every session start | No — you write it | No |
+| Searchable | Semantic search | AI reads it, but only what you wrote | Ctrl+F only |
 | Scales | Thousands of sessions | Single file | Scattered files |
 | Context-aware | Returns relevant context | Static rules | Manual lookup |
 | Setup | 5 minutes | Always maintained | Always maintained |
@@ -126,6 +124,7 @@ MemoTrail doesn't replace `CLAUDE.md` — it complements it. Rules files are for
 - [x] Semantic search across conversations
 - [x] MCP server with 6 tools
 - [x] CLI for indexing and searching
+- [x] Auto-indexing on server startup (no manual `memotrail index` needed)
 - [ ] Automatic decision extraction
 - [ ] Session summarization
 - [ ] Cursor collector
