@@ -147,4 +147,4 @@ MIT — see [LICENSE](LICENSE)
 
 ---
 
-**Built by [Melih Hopa](https://melihhopa.com)** | [memotrail.ai](https://memotrail.ai)
+**Built by [Halil Hopa](https://halilhopa.com)** | [memotrail.ai](https://memotrail.ai)
