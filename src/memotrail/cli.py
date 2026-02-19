@@ -16,37 +16,51 @@ def cmd_serve(args):
 
 def cmd_index(args):
     """Index Claude Code conversation history."""
-    from memotrail.collectors.claude_code import collect_all_sessions
+    from memotrail.collectors.claude_code import find_session_files, parse_session_file
     from memotrail.core.indexer import Indexer
 
     logger.info("Indexing Claude Code conversation history...")
 
-    sessions = collect_all_sessions()
-    if not sessions:
+    files = find_session_files()
+    if not files:
         print("No Claude Code sessions found.")
         print("Make sure you have used Claude Code and sessions exist in ~/.claude/projects/")
         return
 
     indexer = Indexer()
+    sqlite = indexer.sqlite
     indexed = 0
+    skipped = 0
     total_messages = 0
 
-    for session_data in sessions:
+    for f in files:
+        file_path = str(f)
+        if sqlite.is_file_indexed(file_path):
+            skipped += 1
+            continue
+
+        parsed = parse_session_file(f)
+        if not parsed["messages"]:
+            continue
+
         try:
             session_id = indexer.index_session(
-                messages=session_data["messages"],
-                project=session_data["project"],
+                messages=parsed["messages"],
+                project=parsed["project"],
                 source="claude_code",
             )
+            sqlite.mark_file_indexed(file_path, session_id)
             indexed += 1
-            total_messages += len(session_data["messages"])
-            print(f"  ✓ Indexed: {session_data['project'] or 'unknown'} "
-                  f"({len(session_data['messages'])} messages)")
+            total_messages += len(parsed["messages"])
+            print(f"  ✓ Indexed: {parsed['project'] or 'unknown'} "
+                  f"({len(parsed['messages'])} messages)")
         except Exception as e:
             logger.error(f"Failed to index session: {e}")
-            print(f"  ✗ Failed: {session_data.get('source_file', 'unknown')} — {e}")
+            print(f"  ✗ Failed: {parsed.get('source_file', 'unknown')} — {e}")
 
-    print(f"\nDone! Indexed {indexed} sessions ({total_messages} messages total)")
+    print(f"\nDone! Indexed {indexed} new sessions ({total_messages} messages)")
+    if skipped:
+        print(f"  Skipped {skipped} already-indexed sessions")
     print(f"You can now use MemoTrail in Claude Code:")
     print(f"  claude mcp add memotrail -- memotrail serve")
 

@@ -50,6 +50,14 @@ CREATE TABLE IF NOT EXISTS memories (
     updated_at TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS indexed_files (
+    file_path TEXT PRIMARY KEY,
+    file_size INTEGER NOT NULL,
+    file_mtime REAL NOT NULL,
+    session_id TEXT NOT NULL REFERENCES sessions(id),
+    indexed_at TEXT NOT NULL
+);
+
 CREATE INDEX IF NOT EXISTS idx_messages_session ON messages(session_id);
 CREATE INDEX IF NOT EXISTS idx_decisions_session ON decisions(session_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_project ON sessions(project);
@@ -286,6 +294,33 @@ class SQLiteStore:
         )
         self.conn.commit()
         return memory_id
+
+    # ── File tracking ────────────────────────────────────────
+
+    def is_file_indexed(self, file_path: str) -> bool:
+        """Check if a file has already been indexed (same size and mtime)."""
+        path = Path(file_path)
+        if not path.exists():
+            return False
+        row = self.conn.execute(
+            "SELECT file_size, file_mtime FROM indexed_files WHERE file_path = ?",
+            (file_path,),
+        ).fetchone()
+        if not row:
+            return False
+        return row["file_size"] == path.stat().st_size and row["file_mtime"] == path.stat().st_mtime
+
+    def mark_file_indexed(self, file_path: str, session_id: str) -> None:
+        """Record that a file has been indexed."""
+        path = Path(file_path)
+        stat = path.stat()
+        self.conn.execute(
+            "INSERT OR REPLACE INTO indexed_files (file_path, file_size, file_mtime, session_id, indexed_at) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (file_path, stat.st_size, stat.st_mtime, session_id,
+             datetime.now(timezone.utc).isoformat()),
+        )
+        self.conn.commit()
 
     # ── Stats ─────────────────────────────────────────────────
 

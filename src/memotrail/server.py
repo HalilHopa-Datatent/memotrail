@@ -21,6 +21,42 @@ embedder = Embedder()
 indexer = Indexer(sqlite_store, chroma_store, embedder=embedder)
 searcher = Searcher(sqlite_store, chroma_store, embedder=embedder)
 
+# ── Auto-index on startup ─────────────────────────────────────
+
+def _auto_index_new_sessions() -> None:
+    """Index any new or modified Claude Code sessions on startup."""
+    from memotrail.collectors.claude_code import find_session_files, parse_session_file
+
+    files = find_session_files()
+    new_count = 0
+
+    for f in files:
+        file_path = str(f)
+        if sqlite_store.is_file_indexed(file_path):
+            continue
+
+        parsed = parse_session_file(f)
+        if not parsed["messages"]:
+            continue
+
+        try:
+            session_id = indexer.index_session(
+                messages=parsed["messages"],
+                project=parsed["project"],
+                source="claude_code",
+            )
+            sqlite_store.mark_file_indexed(file_path, session_id)
+            new_count += 1
+            logger.info(f"Auto-indexed: {parsed['project'] or 'unknown'} ({len(parsed['messages'])} messages)")
+        except Exception as e:
+            logger.error(f"Auto-index failed for {file_path}: {e}")
+
+    if new_count:
+        logger.info(f"Auto-indexed {new_count} new session(s)")
+    else:
+        logger.info("No new sessions to index")
+
+
 # ── MCP Server ─────────────────────────────────────────────────
 
 app = Server("memotrail")
@@ -294,6 +330,7 @@ async def _memory_stats(args: dict) -> list[TextContent]:
 async def run_server():
     """Run the MCP server via stdio."""
     logger.info("Starting MemoTrail MCP server...")
+    _auto_index_new_sessions()
     async with stdio_server() as (read_stream, write_stream):
         await app.run(read_stream, write_stream, app.create_initialization_options())
 
