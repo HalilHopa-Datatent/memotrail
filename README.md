@@ -60,21 +60,17 @@ Done. Start a new session and ask: *"What did we work on last week?"*
 
 ## How It Works
 
-```mermaid
-graph LR
-    A[You code with Claude] --> B[MemoTrail records session]
-    B --> C[Chunk & embed messages]
-    C --> D[Store locally]
-    D --> E[Next session starts]
-    E --> F[Claude queries MemoTrail]
-    F --> G[Relevant context surfaces]
-    G --> A
 ```
-
-```
-Claude Code session  →  Capture & chunk  →  Embed (all-MiniLM-L6-v2)
-                                                    ↓
-Next session         ←  Return context   ←  Semantic search (ChromaDB)
+┌─────────────────┐     ┌──────────────────┐     ┌─────────────────────────┐
+│  You code with   │────▶│  MemoTrail records │────▶│  Chunk & embed messages  │
+│   Claude Code    │     │   the session      │     │  (all-MiniLM-L6-v2)      │
+└─────────────────┘     └──────────────────┘     └────────────┬────────────┘
+        ▲                                                      │
+        │                                                      ▼
+┌─────────────────┐     ┌──────────────────┐     ┌─────────────────────────┐
+│ Relevant context │◀────│  Semantic search   │◀────│  Store locally           │
+│ surfaces in chat │     │  (ChromaDB)        │     │  (ChromaDB + SQLite)     │
+└─────────────────┘     └──────────────────┘     └─────────────────────────┘
 ```
 
 All processing happens locally. No cloud, no API keys, no data leaves your machine.
