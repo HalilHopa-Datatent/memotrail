@@ -47,8 +47,11 @@ AI:  "Based on session from Jan 15 — you evaluated Redis vs Memcached.
 # 1. Install
 pip install memotrail
 
-# 2. Connect to Claude Code
+# 2. Connect to Claude Code (current project)
 claude mcp add memotrail -- memotrail serve
+
+# Or connect globally (all projects)
+claude mcp add -s user memotrail -- memotrail serve
 ```
 
 That's it. MemoTrail automatically indexes your history on first launch.
