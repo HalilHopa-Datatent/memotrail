@@ -13,14 +13,11 @@ Set TypingSpeed 40ms
 Set WindowBar Colorful
 Set WindowBarSize 40
 
-# Load mock memotrail function silently
+# Load mock — override memotrail command with function
 Hide
-Type "source scripts/demo-mock.sh"
+Type "cd /Users/halilhopa/Documents/GitHub/Memotrail && source scripts/demo-mock.sh && hash -r && type memotrail && clear"
 Enter
-Sleep 500ms
-Type "clear"
-Enter
-Sleep 500ms
+Sleep 2s
 Show
 
 # --- Stats ---
@@ -48,7 +45,6 @@ Enter
 Sleep 800ms
 Type "claude mcp add memotrail -- memotrail serve"
 Sleep 2s
-
 Enter
 Sleep 2s
 Type "# Your AI now remembers everything."
