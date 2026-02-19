@@ -54,7 +54,9 @@ claude mcp add memotrail -- memotrail serve
 
 Done. Start a new session and ask: *"What did we work on last week?"*
 
-<!-- TODO: demo GIF gelecek -->
+<div align="center">
+<img src="demo.gif" alt="MemoTrail Demo" width="800">
+</div>
 
 ## How It Works
 
