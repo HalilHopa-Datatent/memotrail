@@ -13,9 +13,9 @@ Set TypingSpeed 40ms
 Set WindowBar Colorful
 Set WindowBarSize 40
 
-# Load mock — override memotrail command with function
+# Load mock silently
 Hide
-Type "cd /Users/halilhopa/Documents/GitHub/Memotrail && source scripts/demo-mock.sh && hash -r && type memotrail && clear"
+Type "cd /Users/halilhopa/Documents/GitHub/Memotrail && source scripts/demo-mock.sh && hash -r && clear"
 Enter
 Sleep 2s
 Show
@@ -27,26 +27,23 @@ Sleep 400ms
 Enter
 Sleep 3s
 
-# --- Search: authentication ---
-Type 'memotrail search "JWT authentication decision"'
+# --- Search: Redis decision ---
+Type@55ms 'memotrail search "why did we choose Redis for caching"'
 Sleep 400ms
 Enter
-Sleep 7s
+Sleep 8s
 
-# --- Search: Redis ---
-Type 'memotrail search "why did we choose Redis for caching"'
+# --- Search: race condition ---
+Type@55ms 'memotrail search "how do we handle inventory race conditions"'
 Sleep 400ms
 Enter
-Sleep 7s
+Sleep 8s
 
 # --- Connect to Claude Code ---
-Type "# Connect to Claude Code"
+Type "# Add to Claude Code — one command:"
 Enter
-Sleep 800ms
+Sleep 500ms
 Type "claude mcp add memotrail -- memotrail serve"
-Sleep 2s
-Enter
-Sleep 2s
-Type "# Your AI now remembers everything."
+Sleep 1.5s
 Enter
 Sleep 3s

@@ -60,14 +60,14 @@ Done. Start a new session and ask: *"What did we work on last week?"*
 
 ## How It Works
 
-```mermaid
-flowchart LR
-    A["🖥️ You code\nwith Claude"] -- record --> B["📝 MemoTrail\ncaptures session"]
-    B -- chunk --> C["🧠 Embed messages\n(all-MiniLM-L6-v2)"]
-    C -- store --> D["💾 ChromaDB\n+ SQLite"]
-    D -- next session --> E["🔍 Semantic\nsearch"]
-    E -- surface --> A
-```
+| Step | What happens |
+|:----:|:-------------|
+| **1. Record** | MemoTrail captures every Claude Code session automatically |
+| **2. Chunk** | Conversations are split into meaningful segments |
+| **3. Embed** | Each chunk is embedded using `all-MiniLM-L6-v2` (~80MB, runs on CPU) |
+| **4. Store** | Vectors go to ChromaDB, metadata to SQLite — all under `~/.memotrail/` |
+| **5. Search** | Next session, Claude queries your full history semantically |
+| **6. Surface** | The most relevant past context appears right when you need it |
 
 > **100% local** — no cloud, no API keys, no data leaves your machine.
 
