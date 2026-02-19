@@ -45,8 +45,8 @@ memotrail = "memotrail.cli:main"
 
 [project.urls]
 Homepage = "https://memotrail.ai"
-Repository = "https://github.com/melihhopa/memotrail"
-Issues = "https://github.com/melihhopa/memotrail/issues"
+Repository = "https://github.com/HalilHopa-Datatent/memotrail"
+Issues = "https://github.com/HalilHopa-Datatent/memotrail/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/memotrail"]
