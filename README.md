@@ -4,6 +4,8 @@
 
 **Your AI coding assistant forgets everything. MemoTrail fixes that.**
 
+[🇨🇳 中文](docs/i18n/README.zh-CN.md) · [🇹🇼 繁體中文](docs/i18n/README.zh-TW.md) · [🇯🇵 日本語](docs/i18n/README.ja.md) · [🇵🇹 Português](docs/i18n/README.pt.md) · [🇰🇷 한국어](docs/i18n/README.ko.md) · [🇪🇸 Español](docs/i18n/README.es.md) · [🇩🇪 Deutsch](docs/i18n/README.de.md) · [🇫🇷 Français](docs/i18n/README.fr.md) · [🇮🇱 עברית](docs/i18n/README.he.md) · [🇸🇦 العربية](docs/i18n/README.ar.md) · [🇷🇺 Русский](docs/i18n/README.ru.md) · [🇵🇱 Polski](docs/i18n/README.pl.md) · [🇨🇿 Čeština](docs/i18n/README.cs.md) · [🇳🇱 Nederlands](docs/i18n/README.nl.md) · [🇹🇷 Türkçe](docs/i18n/README.tr.md) · [🇺🇦 Українська](docs/i18n/README.uk.md) · [🇻🇳 Tiếng Việt](docs/i18n/README.vi.md) · [🇮🇩 Indonesia](docs/i18n/README.id.md) · [🇹🇭 ไทย](docs/i18n/README.th.md) · [🇮🇳 हिन्दी](docs/i18n/README.hi.md) · [🇧🇩 বাংলা](docs/i18n/README.bn.md) · [🇵🇰 اردو](docs/i18n/README.ur.md) · [🇷🇴 Română](docs/i18n/README.ro.md) · [🇸🇪 Svenska](docs/i18n/README.sv.md) · [🇮🇹 Italiano](docs/i18n/README.it.md) · [🇬🇷 Ελληνικά](docs/i18n/README.el.md) · [🇭🇺 Magyar](docs/i18n/README.hu.md) · [🇫🇮 Suomi](docs/i18n/README.fi.md) · [🇩🇰 Dansk](docs/i18n/README.da.md) · [🇳🇴 Norsk](docs/i18n/README.no.md)
+
 [![PyPI version](https://img.shields.io/pypi/v/memotrail?color=blue)](https://pypi.org/project/memotrail/)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
