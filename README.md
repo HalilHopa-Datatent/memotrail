@@ -73,6 +73,8 @@ Start a new session and ask: *"What did we work on last week?"*
 | **6. Surface** | The most relevant past context appears right when you need it |
 
 > **100% local** — no cloud, no API keys, no data leaves your machine.
+>
+> **Project-aware** — each project's conversations are stored separately. Search within a single project or across all projects at once.
 
 ## Available Tools
 
