@@ -56,6 +56,41 @@ class TestChunker:
         assert chunks[0].metadata["session_id"] == "sess_123"
         assert chunks[0].metadata["project"] == "myproject"
 
+    def test_turn_strategy_groups_pairs(self):
+        chunker = Chunker(strategy="turn")
+        messages = [
+            {"role": "user", "content": "What is Python?", "timestamp": "2025-01-01T00:00:00Z"},
+            {"role": "assistant", "content": "Python is a programming language.", "timestamp": "2025-01-01T00:00:01Z"},
+            {"role": "user", "content": "What about Go?", "timestamp": "2025-01-01T00:00:02Z"},
+            {"role": "assistant", "content": "Go is also a programming language.", "timestamp": "2025-01-01T00:00:03Z"},
+        ]
+        chunks = chunker.chunk_messages(messages, "test_session")
+        assert len(chunks) == 2
+        assert "Python" in chunks[0].text
+        assert "Go" in chunks[1].text
+
+    def test_turn_strategy_empty(self):
+        chunker = Chunker(strategy="turn")
+        assert chunker.chunk_messages([], "test") == []
+
+    def test_recursive_strategy(self):
+        chunker = Chunker(strategy="recursive", max_tokens=50)
+        messages = [
+            {"role": "user", "content": "Tell me about databases", "timestamp": "t1"},
+            {"role": "assistant", "content": "There are many databases. " * 20, "timestamp": "t2"},
+        ]
+        chunks = chunker.chunk_messages(messages, "test_session")
+        assert len(chunks) >= 2  # Should split the long content
+
+    def test_recursive_strategy_short(self):
+        chunker = Chunker(strategy="recursive")
+        messages = [
+            {"role": "user", "content": "Hi", "timestamp": "t1"},
+            {"role": "assistant", "content": "Hello!", "timestamp": "t2"},
+        ]
+        chunks = chunker.chunk_messages(messages, "test_session")
+        assert len(chunks) == 1  # Short content should be single chunk
+
 
 class TestSQLiteStore:
     def test_create_and_get_session(self):

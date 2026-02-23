@@ -23,38 +23,75 @@ searcher = Searcher(sqlite_store, chroma_store, embedder=embedder)
 
 # ── Auto-index on startup ─────────────────────────────────────
 
-def _auto_index_new_sessions() -> None:
-    """Index any new or modified Claude Code sessions on startup."""
-    from memotrail.collectors.claude_code import find_session_files, parse_session_file
+def _index_file(filepath) -> None:
+    """Index a single session file if not already indexed."""
+    from memotrail.collectors.claude_code import parse_session_file
+    from pathlib import Path
 
-    files = find_session_files()
+    file_path = str(filepath)
+    if sqlite_store.is_file_indexed(file_path):
+        return
+
+    parsed = parse_session_file(Path(filepath))
+    if not parsed["messages"]:
+        return
+
+    try:
+        session_id = indexer.index_session(
+            messages=parsed["messages"],
+            project=parsed["project"],
+            source="claude_code",
+        )
+        sqlite_store.mark_file_indexed(file_path, session_id)
+        logger.info(f"Indexed: {parsed['project'] or 'unknown'} ({len(parsed['messages'])} messages)")
+    except Exception as e:
+        logger.error(f"Index failed for {file_path}: {e}")
+
+
+def _auto_index_new_sessions() -> int:
+    """Index any new or modified sessions on startup (Claude Code + Cursor)."""
+    from memotrail.collectors.claude_code import find_session_files as find_cc_files
+    from memotrail.collectors.cursor import find_session_files as find_cursor_files
+    from memotrail.collectors.cursor import parse_session_file as parse_cursor_file
+
     new_count = 0
 
-    for f in files:
+    # Claude Code sessions
+    for f in find_cc_files():
+        file_path = str(f)
+        if sqlite_store.is_file_indexed(file_path):
+            continue
+        _index_file(f)
+        new_count += 1
+
+    # Cursor sessions
+    for f in find_cursor_files():
         file_path = str(f)
         if sqlite_store.is_file_indexed(file_path):
             continue
 
-        parsed = parse_session_file(f)
-        if not parsed["messages"]:
-            continue
-
         try:
-            session_id = indexer.index_session(
-                messages=parsed["messages"],
-                project=parsed["project"],
-                source="claude_code",
-            )
-            sqlite_store.mark_file_indexed(file_path, session_id)
+            sessions = parse_cursor_file(f)
+            for parsed in sessions:
+                if not parsed["messages"]:
+                    continue
+                session_id = indexer.index_session(
+                    messages=parsed["messages"],
+                    project=parsed["project"],
+                    source="cursor",
+                )
+                logger.info(f"Indexed Cursor: {parsed['project'] or 'unknown'} ({len(parsed['messages'])} messages)")
+            sqlite_store.mark_file_indexed(file_path, session_id if sessions else "skip")
             new_count += 1
-            logger.info(f"Auto-indexed: {parsed['project'] or 'unknown'} ({len(parsed['messages'])} messages)")
         except Exception as e:
-            logger.error(f"Auto-index failed for {file_path}: {e}")
+            logger.error(f"Cursor index failed for {file_path}: {e}")
 
     if new_count:
         logger.info(f"Auto-indexed {new_count} new session(s)")
     else:
         logger.info("No new sessions to index")
+
+    return new_count
 
 
 # ── MCP Server ─────────────────────────────────────────────────
@@ -168,6 +205,33 @@ async def list_tools() -> list[Tool]:
             },
         ),
         Tool(
+            name="search_keyword",
+            description=(
+                "Search past conversations using keyword matching (BM25). "
+                "Better for exact terms, function names, or error messages. "
+                "Example: search_keyword('TypeError NoneType')"
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "Keyword search query",
+                    },
+                    "limit": {
+                        "type": "integer",
+                        "description": "Max results (default: 5)",
+                        "default": 5,
+                    },
+                    "project": {
+                        "type": "string",
+                        "description": "Filter by project name (optional)",
+                    },
+                },
+                "required": ["query"],
+            },
+        ),
+        Tool(
             name="memory_stats",
             description="Get statistics about indexed sessions, messages, and memories.",
             inputSchema={
@@ -190,6 +254,8 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
             return await _get_recent_sessions(arguments)
         elif name == "get_session_detail":
             return await _get_session_detail(arguments)
+        elif name == "search_keyword":
+            return await _search_keyword(arguments)
         elif name == "save_memory":
             return await _save_memory(arguments)
         elif name == "memory_stats":
@@ -296,6 +362,29 @@ async def _get_session_detail(args: dict) -> list[TextContent]:
     return [TextContent(type="text", text="\n".join(output_parts))]
 
 
+async def _search_keyword(args: dict) -> list[TextContent]:
+    query = args["query"]
+    limit = args.get("limit", 5)
+    project = args.get("project")
+
+    results = searcher.search_keyword(query, limit=limit, project=project)
+
+    if not results:
+        return [TextContent(type="text", text="No matching conversations found.")]
+
+    output_parts = [f"Found {len(results)} keyword match(es):\n"]
+    for i, r in enumerate(results, 1):
+        output_parts.append(
+            f"--- Result {i} (score: {r.score:.2f}) ---\n"
+            f"Session: {r.session_id}\n"
+            f"Project: {r.project or 'unknown'}\n"
+            f"Time: {r.timestamp or 'unknown'}\n"
+            f"Content:\n{r.chunk_text[:500]}\n"
+        )
+
+    return [TextContent(type="text", text="\n".join(output_parts))]
+
+
 async def _save_memory(args: dict) -> list[TextContent]:
     content = args["content"]
     tags = args.get("tags", [])
@@ -331,8 +420,17 @@ async def run_server():
     """Run the MCP server via stdio."""
     logger.info("Starting MemoTrail MCP server...")
     _auto_index_new_sessions()
-    async with stdio_server() as (read_stream, write_stream):
-        await app.run(read_stream, write_stream, app.create_initialization_options())
+
+    # Start file watcher for live indexing
+    from memotrail.core.watcher import SessionWatcher
+    watcher = SessionWatcher(index_callback=_index_file)
+    watcher.start()
+
+    try:
+        async with stdio_server() as (read_stream, write_stream):
+            await app.run(read_stream, write_stream, app.create_initialization_options())
+    finally:
+        watcher.stop()
 
 
 def main():

@@ -1,7 +1,6 @@
-from memotrail.collectors.claude_code import (
-    collect_all_sessions,
-    find_session_files,
-    parse_session_file,
-)
+"""Collectors module — platform-specific session log parsers."""
 
-__all__ = ["collect_all_sessions", "find_session_files", "parse_session_file"]
+from memotrail.collectors import claude_code
+from memotrail.collectors import cursor
+
+__all__ = ["claude_code", "cursor"]

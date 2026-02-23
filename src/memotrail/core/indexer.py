@@ -2,6 +2,7 @@
 
 from memotrail.core.chunker import Chunker, Chunk
 from memotrail.core.embedder import Embedder
+from memotrail.extractors import summarize_session, extract_decisions
 from memotrail.storage import ChromaStore, SQLiteStore
 from memotrail.utils import get_logger, count_tokens
 
@@ -72,9 +73,31 @@ class Indexer:
             ids=[c.id for c in chunks],
         )
 
-        # 6. Update session metadata
+        # 6. Generate session summary
+        summary = None
+        try:
+            summary = summarize_session(messages)
+        except Exception as e:
+            logger.warning(f"Summary generation failed for {session.id}: {e}")
+
+        # 7. Extract decisions
+        try:
+            decisions = extract_decisions(messages)
+            for dec in decisions:
+                self.sqlite.add_decision(
+                    session_id=session.id,
+                    decision_text=dec.decision_text,
+                    context=dec.context,
+                    category=dec.category,
+                )
+            if decisions:
+                logger.info(f"Extracted {len(decisions)} decision(s) from session {session.id}")
+        except Exception as e:
+            logger.warning(f"Decision extraction failed for {session.id}: {e}")
+
+        # 8. Update session metadata
         self.sqlite.update_session(
-            session.id, message_count=len(messages)
+            session.id, message_count=len(messages), summary=summary
         )
 
         logger.info(

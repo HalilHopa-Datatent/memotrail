@@ -1,0 +1,100 @@
+{
+  "name": "memotrail",
+  "displayName": "MemoTrail",
+  "description": "Persistent memory for AI coding assistants — search past conversations, decisions, and sessions",
+  "version": "0.1.0",
+  "publisher": "memotrail",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/HalilHopa-Datatent/memotrail"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "ai",
+    "memory",
+    "mcp",
+    "claude",
+    "coding-assistant"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "memotrail.search",
+        "title": "MemoTrail: Search Conversations"
+      },
+      {
+        "command": "memotrail.searchKeyword",
+        "title": "MemoTrail: Keyword Search"
+      },
+      {
+        "command": "memotrail.recentSessions",
+        "title": "MemoTrail: Recent Sessions"
+      },
+      {
+        "command": "memotrail.stats",
+        "title": "MemoTrail: Show Stats"
+      },
+      {
+        "command": "memotrail.indexNow",
+        "title": "MemoTrail: Index Sessions Now"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "memotrail",
+          "title": "MemoTrail",
+          "icon": "$(history)"
+        }
+      ]
+    },
+    "views": {
+      "memotrail": [
+        {
+          "id": "memotrail.sessions",
+          "name": "Recent Sessions"
+        },
+        {
+          "id": "memotrail.search",
+          "name": "Search Results"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "MemoTrail",
+      "properties": {
+        "memotrail.pythonPath": {
+          "type": "string",
+          "default": "memotrail",
+          "description": "Path to the memotrail CLI executable"
+        },
+        "memotrail.searchLimit": {
+          "type": "number",
+          "default": 10,
+          "description": "Maximum number of search results"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src --ext ts",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.3.0"
+  }
+}
