@@ -17,14 +17,19 @@ class Chunk:
     metadata: dict
 
 
-ChunkStrategy = Literal["token", "turn", "recursive"]
+ChunkStrategy = Literal["auto", "token", "turn", "recursive"]
+
+# Auto-strategy thresholds
+_AUTO_TURN_MAX_MESSAGES = 20  # ≤20 messages → turn-based (short sessions)
+_AUTO_RECURSIVE_MIN_AVG_TOKENS = 300  # avg tokens/message ≥300 → recursive (long messages)
 
 
 class Chunker:
     """Split conversation messages into chunks for indexing.
 
     Strategies:
-        - "token": Groups consecutive messages up to token limit (default)
+        - "auto": Automatically picks the best strategy based on session characteristics (default)
+        - "token": Groups consecutive messages up to token limit
         - "turn": Groups user+assistant pairs as natural conversation turns
         - "recursive": Splits on natural boundaries (paragraphs, sentences, then words)
     """
@@ -33,7 +38,7 @@ class Chunker:
         self,
         max_tokens: int | None = None,
         overlap_tokens: int | None = None,
-        strategy: ChunkStrategy = "token",
+        strategy: ChunkStrategy = "auto",
     ):
         self.max_tokens = max_tokens or config.chunk_max_tokens
         self.overlap_tokens = overlap_tokens or config.chunk_overlap_tokens
@@ -58,12 +63,41 @@ class Chunker:
         if not messages:
             return []
 
-        if self.strategy == "turn":
+        strategy = self.strategy
+        if strategy == "auto":
+            strategy = self._pick_strategy(messages)
+
+        if strategy == "turn":
             return self._chunk_by_turns(messages, session_id, project)
-        elif self.strategy == "recursive":
+        elif strategy == "recursive":
             return self._chunk_recursive(messages, session_id, project)
         else:
             return self._chunk_by_tokens(messages, session_id, project)
+
+    def _pick_strategy(self, messages: list[dict]) -> ChunkStrategy:
+        """Automatically select the best chunking strategy.
+
+        Rules:
+            - ≤20 messages → "turn" (short sessions benefit from keeping pairs together)
+            - avg tokens/message ≥300 → "recursive" (long messages need boundary-aware splitting)
+            - otherwise → "token" (general purpose, works well for medium sessions)
+        """
+        content_messages = [m for m in messages if m.get("content", "").strip()]
+        msg_count = len(content_messages)
+
+        if msg_count == 0:
+            return "token"
+
+        if msg_count <= _AUTO_TURN_MAX_MESSAGES:
+            return "turn"
+
+        total_tokens = sum(count_tokens(m.get("content", "")) for m in content_messages)
+        avg_tokens = total_tokens / msg_count
+
+        if avg_tokens >= _AUTO_RECURSIVE_MIN_AVG_TOKENS:
+            return "recursive"
+
+        return "token"
 
     # ── Token-based chunking (original) ──────────────────────────
 

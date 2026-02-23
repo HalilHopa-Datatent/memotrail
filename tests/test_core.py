@@ -91,6 +91,41 @@ class TestChunker:
         chunks = chunker.chunk_messages(messages, "test_session")
         assert len(chunks) == 1  # Short content should be single chunk
 
+    def test_auto_strategy_short_session_uses_turn(self):
+        """Auto should pick 'turn' for short sessions (≤20 messages)."""
+        chunker = Chunker(strategy="auto")
+        messages = [
+            {"role": "user", "content": "What is Redis?", "timestamp": "t1"},
+            {"role": "assistant", "content": "Redis is an in-memory store.", "timestamp": "t2"},
+            {"role": "user", "content": "Should we use it?", "timestamp": "t3"},
+            {"role": "assistant", "content": "Yes, for caching.", "timestamp": "t4"},
+        ]
+        assert chunker._pick_strategy(messages) == "turn"
+
+    def test_auto_strategy_medium_session_uses_token(self):
+        """Auto should pick 'token' for medium sessions (>20 short messages)."""
+        chunker = Chunker(strategy="auto")
+        messages = [
+            {"role": "user" if i % 2 == 0 else "assistant", "content": f"Message {i}"}
+            for i in range(30)
+        ]
+        assert chunker._pick_strategy(messages) == "token"
+
+    def test_auto_strategy_long_messages_uses_recursive(self):
+        """Auto should pick 'recursive' for sessions with long messages (avg ≥300 tokens)."""
+        chunker = Chunker(strategy="auto")
+        long_content = "word " * 400  # ~400 tokens per message
+        messages = [
+            {"role": "user" if i % 2 == 0 else "assistant", "content": long_content}
+            for i in range(30)
+        ]
+        assert chunker._pick_strategy(messages) == "recursive"
+
+    def test_auto_is_default(self):
+        """Chunker should default to auto strategy."""
+        chunker = Chunker()
+        assert chunker.strategy == "auto"
+
 
 class TestSQLiteStore:
     def test_create_and_get_session(self):
