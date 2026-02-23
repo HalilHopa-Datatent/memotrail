@@ -20,6 +20,18 @@ Every session recorded, every decision searchable, every context remembered.
 
 ---
 
+## What's New in v0.3.0
+
+- **Automatic session summarization** — every session gets an AI-generated summary (no API keys needed)
+- **Automatic decision extraction** — architectural decisions detected from conversations using pattern matching
+- **BM25 keyword search** — new `search_keyword` tool for exact terms, error messages, function names
+- **Hybrid search** — combines semantic + keyword results using reciprocal rank fusion
+- **Cursor IDE support** — indexes Cursor chat history from `state.vscdb` files
+- **Real-time file watching** — new sessions indexed instantly via watchdog (no restart needed)
+- **Chunking strategies** — choose between token-based, turn-based, or recursive splitting
+- **VS Code extension** — search, index, and view stats directly from VS Code
+- **69 tests** — comprehensive test coverage across all modules
+
 ## The Problem
 
 Every new Claude Code session starts from zero. Your AI doesn't remember yesterday's 3-hour debugging session, the architectural decisions you made last week, or the approaches that already failed.
@@ -65,16 +77,19 @@ Start a new session and ask: *"What did we work on last week?"*
 
 | Step | What happens |
 |:----:|:-------------|
-| **1. Record** | MemoTrail auto-indexes new sessions every time the server starts |
-| **2. Chunk** | Conversations are split into meaningful segments |
+| **1. Record** | MemoTrail auto-indexes new sessions on startup + watches for new files in real-time |
+| **2. Chunk** | Conversations are split using token, turn-based, or recursive strategies |
 | **3. Embed** | Each chunk is embedded using `all-MiniLM-L6-v2` (~80MB, runs on CPU) |
-| **4. Store** | Vectors go to ChromaDB, metadata to SQLite — all under `~/.memotrail/` |
-| **5. Search** | Next session, Claude queries your full history semantically |
-| **6. Surface** | The most relevant past context appears right when you need it |
+| **4. Extract** | Summaries and architectural decisions are automatically extracted |
+| **5. Store** | Vectors go to ChromaDB, metadata to SQLite — all under `~/.memotrail/` |
+| **6. Search** | Semantic + BM25 keyword search across your full history |
+| **7. Surface** | The most relevant past context appears right when you need it |
 
 > **100% local** — no cloud, no API keys, no data leaves your machine.
 >
 > **Project-aware** — each project's conversations are stored separately. Search within a single project or across all projects at once.
+>
+> **Multi-platform** — supports Claude Code and Cursor IDE, with more coming soon.
 
 ## Available Tools
 
@@ -83,8 +98,9 @@ Once connected, Claude Code gets these MCP tools:
 | Tool | Description |
 |------|-------------|
 | `search_chats` | Semantic search across all past conversations |
-| `get_decisions` | Retrieve recorded architectural decisions |
-| `get_recent_sessions` | List recent coding sessions with summaries |
+| `search_keyword` | BM25 keyword search — great for exact terms, function names, error messages |
+| `get_decisions` | Retrieve recorded architectural decisions (auto-extracted + manual) |
+| `get_recent_sessions` | List recent coding sessions with AI-generated summaries |
 | `get_session_detail` | Deep dive into a specific session's content |
 | `save_memory` | Manually save important facts or decisions |
 | `memory_stats` | View indexing statistics and storage usage |
@@ -110,8 +126,26 @@ memotrail index                          # Manually re-index (optional)
 |-----------|-----------|---------|
 | Embeddings | `all-MiniLM-L6-v2` | ~80MB, runs on CPU |
 | Vector DB | ChromaDB | Persistent, local storage |
+| Keyword Search | BM25 | Pure Python, no extra dependencies |
 | Metadata | SQLite | Single-file database |
+| File Watching | watchdog | Real-time session detection |
 | Protocol | MCP | Model Context Protocol |
+
+### Supported Platforms
+
+| Platform | Status | Format |
+|----------|--------|--------|
+| Claude Code | Supported | JSONL session files |
+| Cursor IDE | Supported | state.vscdb (SQLite) |
+| GitHub Copilot | Planned | — |
+
+### Chunking Strategies
+
+| Strategy | Best for |
+|----------|----------|
+| `token` (default) | General use — groups messages up to token limit |
+| `turn` | Conversation-focused — groups user+assistant pairs |
+| `recursive` | Long content — splits on paragraphs, sentences, words |
 
 ## Why MemoTrail?
 
@@ -129,16 +163,38 @@ MemoTrail doesn't replace `CLAUDE.md` — it complements it. Rules files are for
 
 - [x] Claude Code session indexing
 - [x] Semantic search across conversations
-- [x] MCP server with 6 tools
+- [x] MCP server with 7 tools
 - [x] CLI for indexing and searching
 - [x] Auto-indexing on server startup (no manual `memotrail index` needed)
-- [ ] Automatic decision extraction
-- [ ] Session summarization
-- [ ] Cursor collector
+- [x] Automatic decision extraction
+- [x] Session summarization
+- [x] Cursor IDE collector
+- [x] BM25 keyword search + hybrid search
+- [x] Real-time file watching (watchdog)
+- [x] Multiple chunking strategies (token, turn, recursive)
+- [x] VS Code extension
 - [ ] Copilot collector
-- [ ] VS Code extension
 - [ ] Cloud sync (Pro)
 - [ ] Team memory (Team)
+
+## VS Code Extension
+
+MemoTrail includes a VS Code extension for direct IDE integration.
+
+**Commands available:**
+- `MemoTrail: Search Conversations` — semantic search
+- `MemoTrail: Keyword Search` — BM25 keyword search
+- `MemoTrail: Recent Sessions` — view session stats
+- `MemoTrail: Index Sessions Now` — trigger manual indexing
+- `MemoTrail: Show Stats` — display indexing statistics
+
+**Setup:**
+```bash
+cd vscode-extension
+npm install
+npm run compile
+# Then press F5 in VS Code to launch Extension Development Host
+```
 
 ## Development
 
@@ -155,10 +211,10 @@ ruff check src/
 Contributions welcome! See [CONTRIBUTING.md](docs/CONTRIBUTING.md) for guidelines.
 
 **Good first issues:**
-- [ ] Add Cursor session collector
-- [ ] Add Copilot session collector
-- [ ] Improve chunking strategy
-- [ ] Add BM25 keyword search alongside semantic search
+- [ ] Add GitHub Copilot session collector
+- [ ] Add Windsurf/Codeium session collector
+- [ ] Add cloud sync option (opt-in)
+- [ ] Add team memory sharing
 
 ## License
 
