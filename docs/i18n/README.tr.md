@@ -22,6 +22,20 @@ Her oturum kaydedilir, her karar aranabilir, her bağlam hatırlanır.
 
 ---
 
+## v0.3.0'daki Yenilikler
+
+- **Otomatik oturum ozetleme** -- her oturum yapay zeka tarafindan olusturulan bir ozet alir (API anahtari gerekmez)
+- **Otomatik karar cikarma** -- mimari kararlar, oruntu eslestirme kullanilarak konusmalardan tespit edilir
+- **BM25 anahtar kelime aramasi** -- kesin terimler, hata mesajlari, fonksiyon adlari icin yeni `search_keyword` araci
+- **Hibrit arama** -- karsilikli siralama fuzyon yontemiyle anlamsal + anahtar kelime sonuclarini birlestirir
+- **Cursor IDE destegi** -- `state.vscdb` dosyalarindan Cursor sohbet gecmisini indeksler
+- **Gercek zamanli dosya izleme** -- yeni oturumlar watchdog araciligiyla aninda indekslenir (yeniden baslatma gerekmez)
+- **Parcalama stratejileri** -- token tabanli, tur tabanli veya ozyinelemeli bolme arasinda secim yapin
+- **VS Code eklentisi** -- VS Code icerisinden dogrudan arama, indeksleme ve istatistik goruntuleme
+- **69 test** -- tum moduller icin kapsamli test kapsamasi
+
+---
+
 ## Problem
 
 Her yeni Claude Code oturumu sıfırdan başlar. AI'nız dünkü 3 saatlik hata ayıklama oturumunu, geçen hafta aldığınız mimari kararları ya da daha önce başarısız olan yaklaşımları hatırlamaz.
@@ -60,14 +74,17 @@ Yeni bir oturum başlatın ve sorun: *"Geçen hafta ne üzerinde çalıştık?"*
 
 | Adım | Ne olur |
 |:----:|:-------------|
-| **1. Kaydet** | MemoTrail her sunucu başlangıcında yeni oturumları otomatik indeksler |
-| **2. Böl** | Konuşmalar anlamlı parçalara bölünür |
+| **1. Kaydet** | MemoTrail başlangıçta yeni oturumları otomatik indeksler + gerçek zamanlı yeni dosyaları izler |
+| **2. Böl** | Konuşmalar token, tur tabanlı veya özyinelemeli stratejilerle bölünür |
 | **3. Göm** | Her parça `all-MiniLM-L6-v2` ile gömülür (~80MB, CPU'da çalışır) |
-| **4. Depola** | Vektörler ChromaDB'ye, meta veriler SQLite'a — hepsi `~/.memotrail/` altında |
-| **5. Ara** | Bir sonraki oturumda Claude tüm geçmişinizi anlamsal olarak arar |
-| **6. Göster** | En ilgili geçmiş bağlam tam ihtiyacınız olduğunda belirir |
+| **4. Çıkar** | Özetler ve mimari kararlar otomatik olarak çıkarılır |
+| **5. Depola** | Vektörler ChromaDB'ye, meta veriler SQLite'a — hepsi `~/.memotrail/` altında |
+| **6. Ara** | Anlamsal + BM25 anahtar kelime araması tüm geçmişinizde |
+| **7. Göster** | En ilgili geçmiş bağlam tam ihtiyacınız olduğunda belirir |
 
 > **%100 yerel** — bulut yok, API anahtarı yok, hiçbir veri makinenizi terk etmez.
+
+> **Çoklu platform** — Claude Code ve Cursor IDE destekler, daha fazlası yakında.
 
 ## Mevcut Araçlar
 
@@ -76,8 +93,9 @@ Bağlandıktan sonra Claude Code şu MCP araçlarını kullanabilir:
 | Araç | Açıklama |
 |------|-------------|
 | `search_chats` | Tüm geçmiş konuşmalarda anlamsal arama |
-| `get_decisions` | Kaydedilmiş mimari kararları getir |
-| `get_recent_sessions` | Son kodlama oturumlarını özetleriyle listele |
+| `search_keyword` | BM25 anahtar kelime araması — kesin terimler, fonksiyon adları, hata mesajları için idealdir |
+| `get_decisions` | Kaydedilmiş mimari kararları getir (otomatik çıkarılan + manuel) |
+| `get_recent_sessions` | Son kodlama oturumlarını yapay zeka tarafından oluşturulan özetlerle listele |
 | `get_session_detail` | Belirli bir oturumun içeriğini detaylı incele |
 | `save_memory` | Önemli gerçekleri veya kararları elle kaydet |
 | `memory_stats` | İndeksleme istatistikleri ve depolama kullanımını gör |
@@ -103,8 +121,26 @@ memotrail index                          # Elle yeniden indeksle (isteğe bağl�
 |-----------|-----------|---------|
 | Gömmeler | `all-MiniLM-L6-v2` | ~80MB, CPU'da çalışır |
 | Vektör DB | ChromaDB | Kalıcı yerel depolama |
+| Anahtar Kelime Araması | BM25 | Saf Python, ek bağımlılık yok |
 | Meta Veri | SQLite | Tek dosya veritabanı |
+| Dosya İzleme | watchdog | Gerçek zamanlı oturum algılama |
 | Protokol | MCP | Model Context Protocol |
+
+#### Desteklenen Platformlar
+
+| Platform | Durum | Detaylar |
+|----------|-------|---------|
+| Claude Code | Destekleniyor | JSONL oturum dosyaları |
+| Cursor IDE | Destekleniyor | state.vscdb (SQLite) |
+| GitHub Copilot | Planlanıyor | — |
+
+#### Parçalama Stratejileri
+
+| Strateji | Kullanım Alanı |
+|----------|---------------|
+| `token` (varsayılan) | Genel kullanım — mesajları token sınırına kadar gruplar |
+| `turn` | Konuşma odaklı — kullanıcı+asistan çiftlerini gruplar |
+| `recursive` | Uzun içerik — paragraflara, cümlelere, kelimelere göre böler |
 
 ## Neden MemoTrail?
 
@@ -122,16 +158,29 @@ MemoTrail `CLAUDE.md`'nin yerine geçmez — onu tamamlar. Kural dosyaları tali
 
 - [x] Claude Code oturum indeksleme
 - [x] Konuşmalar arası anlamsal arama
-- [x] 6 araçlı MCP sunucusu
+- [x] 7 araçlı MCP sunucusu
 - [x] İndeksleme ve arama için CLI
 - [x] Sunucu başlangıcında otomatik indeksleme
-- [ ] Otomatik karar çıkarma
-- [ ] Oturum özetleme
-- [ ] Cursor toplayıcı
+- [x] Otomatik karar çıkarma
+- [x] Oturum özetleme
+- [x] Cursor IDE toplayıcı
+- [x] BM25 anahtar kelime araması + hibrit arama
+- [x] Gerçek zamanlı dosya izleme (watchdog)
+- [x] Çoklu parçalama stratejileri (token, turn, recursive)
+- [x] VS Code eklentisi
 - [ ] Copilot toplayıcı
-- [ ] VS Code eklentisi
 - [ ] Bulut senkronizasyonu (Pro)
 - [ ] Takım hafızası (Team)
+
+## VS Code Eklentisi
+
+MemoTrail dogrudan VS Code icerisinde calisir. Komut paletinden su komutlari kullanabilirsiniz:
+
+- **MemoTrail: Konusmalari Ara** -- gecmis oturumlarda anlamsal arama
+- **MemoTrail: Anahtar Kelime Aramasi** -- BM25 anahtar kelime aramasi
+- **MemoTrail: Son Oturumlar** -- son kodlama oturumlarini goruntule
+- **MemoTrail: Oturumlari Simdi Indeksle** -- oturumlari hemen indeksle
+- **MemoTrail: Istatistikleri Goster** -- indeksleme istatistiklerini gor
 
 ## Geliştirme
 

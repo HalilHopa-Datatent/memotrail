@@ -22,6 +22,20 @@ Ogni sessione registrata, ogni decisione ricercabile, ogni contesto ricordato.
 
 ---
 
+## Novita nella v0.3.0
+
+- **Riassunti automatici delle sessioni** — ogni sessione riceve un riassunto generato dall'AI (nessuna chiave API necessaria)
+- **Estrazione automatica delle decisioni** — decisioni architetturali rilevate dalle conversazioni tramite pattern matching
+- **Ricerca per parole chiave BM25** — nuovo strumento `search_keyword` per termini esatti, messaggi di errore, nomi di funzioni
+- **Ricerca ibrida** — combina risultati semantici + per parole chiave usando reciprocal rank fusion
+- **Supporto Cursor IDE** — indicizza la cronologia chat di Cursor dai file `state.vscdb`
+- **Monitoraggio file in tempo reale** — nuove sessioni indicizzate istantaneamente tramite watchdog (nessun riavvio necessario)
+- **Strategie di suddivisione** — scelta tra suddivisione per token, per turno o ricorsiva
+- **Estensione VS Code** — cerca, indicizza e visualizza statistiche direttamente da VS Code
+- **69 test** — copertura completa dei test su tutti i moduli
+
+---
+
 ## Il Problema
 
 Ogni nuova sessione di Claude Code parte da zero. La tua AI non ricorda la sessione di debug di 3 ore di ieri, le decisioni architetturali della settimana scorsa, o gli approcci che hanno già fallito.
@@ -60,14 +74,17 @@ Inizia una nuova sessione e chiedi: *"Su cosa abbiamo lavorato la settimana scor
 
 | Passo | Cosa succede |
 |:----:|:-------------|
-| **1. Registrare** | MemoTrail indicizza automaticamente le nuove sessioni ad ogni avvio del server |
-| **2. Suddividere** | Le conversazioni vengono suddivise in segmenti significativi |
+| **1. Registrare** | MemoTrail indicizza automaticamente le nuove sessioni all'avvio + monitora nuovi file in tempo reale |
+| **2. Suddividere** | Le conversazioni vengono suddivise con strategie per token, per turno o ricorsive |
 | **3. Incorporare** | Ogni frammento viene incorporato con `all-MiniLM-L6-v2` (~80MB, gira su CPU) |
-| **4. Archiviare** | I vettori vanno in ChromaDB, i metadati in SQLite — tutto sotto `~/.memotrail/` |
-| **5. Cercare** | Nella sessione successiva, Claude interroga tutta la tua cronologia semanticamente |
-| **6. Mostrare** | Il contesto passato più rilevante appare proprio quando ne hai bisogno |
+| **4. Estrarre** | Riassunti e decisioni architetturali vengono estratti automaticamente |
+| **5. Archiviare** | I vettori vanno in ChromaDB, i metadati in SQLite — tutto sotto `~/.memotrail/` |
+| **6. Cercare** | Ricerca semantica + BM25 per parole chiave nell'intera cronologia |
+| **7. Mostrare** | Il contesto passato più rilevante appare proprio quando ne hai bisogno |
 
 > **100% locale** — nessun cloud, nessuna chiave API, nessun dato lascia la tua macchina.
+
+> **Multipiattaforma** — supporta Claude Code e Cursor IDE, con altri in arrivo.
 
 ## Strumenti Disponibili
 
@@ -76,8 +93,9 @@ Una volta connesso, Claude Code ottiene questi strumenti MCP:
 | Strumento | Descrizione |
 |------|-------------|
 | `search_chats` | Ricerca semantica in tutte le conversazioni passate |
-| `get_decisions` | Recuperare le decisioni architetturali registrate |
-| `get_recent_sessions` | Elencare le sessioni recenti con riassunti |
+| `search_keyword` | Ricerca BM25 per parole chiave — ideale per termini esatti, nomi di funzioni, messaggi di errore |
+| `get_decisions` | Recuperare le decisioni architetturali registrate (auto-estratte + manuali) |
+| `get_recent_sessions` | Elencare le sessioni recenti con riassunti generati dall'AI |
 | `get_session_detail` | Esplorare in dettaglio il contenuto di una sessione specifica |
 | `save_memory` | Salvare manualmente fatti o decisioni importanti |
 | `memory_stats` | Visualizzare statistiche di indicizzazione e utilizzo dello storage |
@@ -103,8 +121,26 @@ memotrail index                          # Re-indicizzare manualmente (opzionale
 |-----------|-----------|---------|
 | Embedding | `all-MiniLM-L6-v2` | ~80MB, gira su CPU |
 | DB Vettoriale | ChromaDB | Storage locale persistente |
+| Ricerca per Parole Chiave | BM25 | Python puro, nessuna dipendenza aggiuntiva |
 | Metadati | SQLite | Database a file singolo |
+| Monitoraggio File | watchdog | Rilevamento sessioni in tempo reale |
 | Protocollo | MCP | Model Context Protocol |
+
+#### Piattaforme Supportate
+
+| Piattaforma | Stato | Formato |
+|-------------|-------|---------|
+| Claude Code | Supportato | File sessione JSONL |
+| Cursor IDE | Supportato | state.vscdb (SQLite) |
+| GitHub Copilot | Pianificato | — |
+
+#### Strategie di Suddivisione
+
+| Strategia | Utilizzo |
+|-----------|----------|
+| `token` (predefinita) | Uso generale — raggruppa messaggi fino al limite di token |
+| `turn` | Focalizzata sulla conversazione — raggruppa coppie utente+assistente |
+| `recursive` | Contenuto lungo — suddivide per paragrafi, frasi, parole |
 
 ## Perché MemoTrail?
 
@@ -122,16 +158,30 @@ MemoTrail non sostituisce `CLAUDE.md` — lo completa. I file di regole sono per
 
 - [x] Indicizzazione sessioni Claude Code
 - [x] Ricerca semantica tra le conversazioni
-- [x] Server MCP con 6 strumenti
+- [x] Server MCP con 7 strumenti
 - [x] CLI per indicizzazione e ricerca
 - [x] Auto-indicizzazione all'avvio del server
-- [ ] Estrazione automatica delle decisioni
-- [ ] Riassunto delle sessioni
-- [ ] Collettore Cursor
+- [x] Estrazione automatica delle decisioni
+- [x] Riassunto delle sessioni
+- [x] Collettore Cursor IDE
+- [x] Ricerca BM25 per parole chiave + ricerca ibrida
+- [x] Monitoraggio file in tempo reale (watchdog)
+- [x] Strategie multiple di suddivisione (token, turno, ricorsiva)
+- [x] Estensione VS Code
 - [ ] Collettore Copilot
-- [ ] Estensione VS Code
 - [ ] Sincronizzazione cloud (Pro)
 - [ ] Memoria di team (Team)
+
+## Estensione VS Code
+
+Cerca, indicizza e visualizza statistiche direttamente da VS Code.
+
+**Comandi:**
+- **Search Conversations** — ricerca semantica da VS Code
+- **Keyword Search** — ricerca BM25 per termini esatti
+- **Recent Sessions** — visualizzazione sessioni recenti con riassunti
+- **Index Sessions Now** — avvio indicizzazione su richiesta
+- **Show Stats** — visualizzazione statistiche della memoria
 
 ## Sviluppo
 

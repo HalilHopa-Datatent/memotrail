@@ -22,7 +22,21 @@ Chaque session enregistrée, chaque décision recherchable, chaque contexte mém
 
 ---
 
-## Le Problème
+## Nouveautes de la v0.3.0
+
+- **Resume automatique des sessions** -- chaque session recoit un resume genere par l'IA (aucune cle API necessaire)
+- **Extraction automatique des decisions** -- les decisions architecturales sont detectees dans les conversations par correspondance de motifs
+- **Recherche par mots-cles BM25** -- nouvel outil `search_keyword` pour les termes exacts, messages d'erreur, noms de fonctions
+- **Recherche hybride** -- combine les resultats semantiques + mots-cles via la fusion de rangs reciproques
+- **Support Cursor IDE** -- indexe l'historique des chats Cursor depuis les fichiers `state.vscdb`
+- **Surveillance de fichiers en temps reel** -- les nouvelles sessions sont indexees instantanement via watchdog (pas de redemarrage necessaire)
+- **Strategies de decoupage** -- choix entre decoupage par tokens, par tours ou recursif
+- **Extension VS Code** -- recherche, indexation et statistiques directement depuis VS Code
+- **69 tests** -- couverture de tests complete sur tous les modules
+
+---
+
+## Le Probleme
 
 Chaque nouvelle session Claude Code commence à zéro. Votre AI ne se souvient pas de la session de débogage de 3 heures d'hier, des décisions d'architecture de la semaine dernière, ni des approches qui ont déjà échoué.
 
@@ -58,16 +72,19 @@ Démarrez une nouvelle session et demandez : *"Sur quoi avons-nous travaillé la
 
 ## Comment ça Marche
 
-| Étape | Ce qui se passe |
+| Etape | Ce qui se passe |
 |:----:|:-------------|
-| **1. Enregistrer** | MemoTrail indexe automatiquement les nouvelles sessions à chaque démarrage du serveur |
-| **2. Découper** | Les conversations sont découpées en segments significatifs |
-| **3. Incorporer** | Chaque segment est incorporé avec `all-MiniLM-L6-v2` (~80Mo, tourne sur CPU) |
-| **4. Stocker** | Les vecteurs vont dans ChromaDB, les métadonnées dans SQLite — tout sous `~/.memotrail/` |
-| **5. Chercher** | À la session suivante, Claude interroge tout votre historique sémantiquement |
-| **6. Afficher** | Le contexte passé le plus pertinent apparaît quand vous en avez besoin |
+| **1. Enregistrer** | MemoTrail indexe automatiquement les nouvelles sessions au demarrage + surveille les nouveaux fichiers en temps reel |
+| **2. Decouper** | Les conversations sont decoupees avec des strategies par tokens, par tours ou recursives |
+| **3. Incorporer** | Chaque segment est incorpore avec `all-MiniLM-L6-v2` (~80Mo, tourne sur CPU) |
+| **4. Extraire** | Les resumes et decisions architecturales sont automatiquement extraits |
+| **5. Stocker** | Les vecteurs vont dans ChromaDB, les metadonnees dans SQLite -- tout sous `~/.memotrail/` |
+| **6. Chercher** | Recherche semantique + BM25 par mots-cles sur tout votre historique |
+| **7. Afficher** | Le contexte passe le plus pertinent apparait quand vous en avez besoin |
 
-> **100% local** — pas de cloud, pas de clés API, aucune donnée ne quitte votre machine.
+> **100% local** -- pas de cloud, pas de cles API, aucune donnee ne quitte votre machine.
+
+> **Multi-plateforme** -- supporte Claude Code et Cursor IDE, d'autres arrivent bientot.
 
 ## Outils Disponibles
 
@@ -75,11 +92,12 @@ Une fois connecté, Claude Code obtient ces outils MCP :
 
 | Outil | Description |
 |------|-------------|
-| `search_chats` | Recherche sémantique dans toutes les conversations passées |
-| `get_decisions` | Récupérer les décisions d'architecture enregistrées |
-| `get_recent_sessions` | Lister les sessions récentes avec des résumés |
-| `get_session_detail` | Explorer en détail le contenu d'une session spécifique |
-| `save_memory` | Sauvegarder manuellement des faits ou décisions importants |
+| `search_chats` | Recherche semantique dans toutes les conversations passees |
+| `search_keyword` | Recherche par mots-cles BM25 -- ideal pour les termes exacts, noms de fonctions, messages d'erreur |
+| `get_decisions` | Recuperer les decisions d'architecture enregistrees (extraites automatiquement + manuelles) |
+| `get_recent_sessions` | Lister les sessions recentes avec des resumes generes par l'IA |
+| `get_session_detail` | Explorer en detail le contenu d'une session specifique |
+| `save_memory` | Sauvegarder manuellement des faits ou decisions importants |
 | `memory_stats` | Voir les statistiques d'indexation et l'utilisation du stockage |
 
 ## Commandes CLI
@@ -99,12 +117,30 @@ memotrail index                          # Ré-indexer manuellement (optionnel)
 └── memotrail.db     # Métadonnées de session (SQLite)
 ```
 
-| Composant | Technologie | Détails |
+| Composant | Technologie | Details |
 |-----------|-----------|---------|
 | Embeddings | `all-MiniLM-L6-v2` | ~80Mo, tourne sur CPU |
 | BD Vectorielle | ChromaDB | Stockage local persistant |
-| Métadonnées | SQLite | Base de données mono-fichier |
+| Recherche par mots-cles | BM25 | Python pur, aucune dependance supplementaire |
+| Metadonnees | SQLite | Base de donnees mono-fichier |
+| Surveillance de fichiers | watchdog | Detection de sessions en temps reel |
 | Protocole | MCP | Model Context Protocol |
+
+#### Plateformes supportees
+
+| Plateforme | Statut | Details |
+|------------|--------|---------|
+| Claude Code | Supporte | Fichiers de session JSONL |
+| Cursor IDE | Supporte | state.vscdb (SQLite) |
+| GitHub Copilot | Prevu | -- |
+
+#### Strategies de decoupage
+
+| Strategie | Cas d'utilisation |
+|-----------|------------------|
+| `token` (par defaut) | Usage general -- regroupe les messages jusqu'a la limite de tokens |
+| `turn` | Axe conversation -- regroupe les paires utilisateur+assistant |
+| `recursive` | Contenu long -- decoupe par paragraphes, phrases, mots |
 
 ## Pourquoi MemoTrail ?
 
@@ -121,19 +157,32 @@ MemoTrail ne remplace pas `CLAUDE.md` — il le complète. Les fichiers de règl
 ## Roadmap
 
 - [x] Indexation des sessions Claude Code
-- [x] Recherche sémantique entre les conversations
-- [x] Serveur MCP avec 6 outils
+- [x] Recherche semantique entre les conversations
+- [x] Serveur MCP avec 7 outils
 - [x] CLI pour l'indexation et la recherche
-- [x] Auto-indexation au démarrage du serveur
-- [ ] Extraction automatique des décisions
-- [ ] Résumé de sessions
-- [ ] Collecteur Cursor
+- [x] Auto-indexation au demarrage du serveur
+- [x] Extraction automatique des decisions
+- [x] Resume de sessions
+- [x] Collecteur Cursor IDE
+- [x] Recherche par mots-cles BM25 + recherche hybride
+- [x] Surveillance de fichiers en temps reel (watchdog)
+- [x] Strategies de decoupage multiples (token, turn, recursive)
+- [x] Extension VS Code
 - [ ] Collecteur Copilot
-- [ ] Extension VS Code
 - [ ] Synchronisation cloud (Pro)
-- [ ] Mémoire d'équipe (Team)
+- [ ] Memoire d'equipe (Team)
 
-## Développement
+## Extension VS Code
+
+MemoTrail fonctionne directement dans VS Code. Utilisez les commandes suivantes depuis la palette de commandes :
+
+- **MemoTrail: Rechercher des conversations** -- recherche semantique dans les sessions passees
+- **MemoTrail: Recherche par mots-cles** -- recherche par mots-cles BM25
+- **MemoTrail: Sessions recentes** -- voir les sessions de codage recentes
+- **MemoTrail: Indexer les sessions maintenant** -- indexer les sessions immediatement
+- **MemoTrail: Afficher les statistiques** -- voir les statistiques d'indexation
+
+## Developpement
 
 ```bash
 git clone https://github.com/HalilHopa-Datatent/memotrail.git

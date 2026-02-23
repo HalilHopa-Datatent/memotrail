@@ -20,6 +20,18 @@ Setiap sesi direkam, setiap keputusan dapat dicari, setiap konteks diingat.
 
 ---
 
+## Yang Baru di v0.3.0
+
+- **Ringkasan sesi otomatis** — setiap sesi mendapat ringkasan buatan AI (tanpa API key)
+- **Ekstraksi keputusan otomatis** — keputusan arsitektur terdeteksi dari percakapan menggunakan pencocokan pola
+- **Pencarian kata kunci BM25** — alat `search_keyword` baru untuk istilah tepat, pesan error, nama fungsi
+- **Pencarian hibrida** — menggabungkan hasil semantik + kata kunci menggunakan reciprocal rank fusion
+- **Dukungan Cursor IDE** — mengindeks riwayat chat Cursor dari file `state.vscdb`
+- **Pemantauan file real-time** — sesi baru diindeks secara instan melalui watchdog (tanpa restart)
+- **Strategi chunking** — pilih antara token-based, turn-based, atau pemisahan rekursif
+- **Ekstensi VS Code** — cari, indeks, dan lihat statistik langsung dari VS Code
+- **69 tes** — cakupan pengujian komprehensif di semua modul
+
 ## Masalahnya
 
 Setiap sesi baru Claude Code dimulai dari nol. AI Anda tidak mengingat sesi debugging 3 jam kemarin, keputusan arsitektur minggu lalu, atau pendekatan yang sudah gagal.
@@ -57,22 +69,26 @@ Itu saja. MemoTrail secara otomatis mengindeks riwayat Anda saat pertama kali di
 
 | Langkah | Apa yang terjadi |
 |:----:|:-------------|
-| **1. Rekam** | MemoTrail mengindeks sesi baru secara otomatis setiap server dimulai |
-| **2. Bagi** | Percakapan dibagi menjadi segmen bermakna |
+| **1. Rekam** | MemoTrail mengindeks sesi baru secara otomatis saat startup + memantau file baru secara real-time |
+| **2. Bagi** | Percakapan dibagi menggunakan strategi token, turn-based, atau recursive |
 | **3. Embed** | Setiap bagian di-embed menggunakan `all-MiniLM-L6-v2` (~80MB, berjalan di CPU) |
-| **4. Simpan** | Vektor ke ChromaDB, metadata ke SQLite — semua di `~/.memotrail/` |
-| **5. Cari** | Di sesi berikutnya, Claude mencari secara semantik di seluruh riwayat Anda |
-| **6. Tampilkan** | Konteks masa lalu paling relevan muncul tepat saat Anda membutuhkannya |
+| **4. Ekstrak** | Ringkasan dan keputusan arsitektur diekstrak secara otomatis |
+| **5. Simpan** | Vektor ke ChromaDB, metadata ke SQLite — semua di `~/.memotrail/` |
+| **6. Cari** | Pencarian semantik + BM25 kata kunci di seluruh riwayat Anda |
+| **7. Tampilkan** | Konteks masa lalu paling relevan muncul tepat saat Anda membutuhkannya |
 
 > **100% lokal** — tanpa cloud, tanpa API key, tidak ada data yang meninggalkan mesin Anda.
+>
+> **Multi-platform** — mendukung Claude Code dan Cursor IDE, lebih banyak segera hadir.
 
 ## Alat Tersedia
 
 | Alat | Deskripsi |
 |------|-------------|
 | `search_chats` | Pencarian semantik di semua percakapan sebelumnya |
-| `get_decisions` | Mengambil keputusan arsitektur yang tercatat |
-| `get_recent_sessions` | Daftar sesi coding terbaru dengan ringkasan |
+| `search_keyword` | Pencarian kata kunci BM25 — bagus untuk istilah tepat, nama fungsi, pesan error |
+| `get_decisions` | Mengambil keputusan arsitektur yang tercatat (diekstrak otomatis + manual) |
+| `get_recent_sessions` | Daftar sesi coding terbaru dengan ringkasan buatan AI |
 | `get_session_detail` | Melihat detail konten sesi tertentu |
 | `save_memory` | Menyimpan fakta atau keputusan penting secara manual |
 | `memory_stats` | Melihat statistik pengindeksan dan penggunaan penyimpanan |
@@ -85,6 +101,102 @@ memotrail search "redis caching decision"  # Cari dari terminal
 memotrail stats                          # Lihat statistik pengindeksan
 memotrail index                          # Indeks ulang secara manual (opsional)
 ```
+
+## Arsitektur
+
+```
+~/.memotrail/
+├── chroma/          # Embedding vektor (ChromaDB)
+└── memotrail.db     # Metadata sesi (SQLite)
+```
+
+| Komponen | Teknologi | Detail |
+|-----------|-----------|---------|
+| Embedding | `all-MiniLM-L6-v2` | ~80MB, berjalan di CPU |
+| Vector DB | ChromaDB | Penyimpanan lokal persisten |
+| Pencarian Kata Kunci | BM25 | Python murni, tanpa dependensi tambahan |
+| Metadata | SQLite | Database satu file |
+| Pemantauan File | watchdog | Deteksi sesi real-time |
+| Protokol | MCP | Model Context Protocol |
+
+### Platform yang Didukung
+
+| Platform | Status | Format |
+|----------|--------|--------|
+| Claude Code | Didukung | File sesi JSONL |
+| Cursor IDE | Didukung | state.vscdb (SQLite) |
+| GitHub Copilot | Direncanakan | — |
+
+### Strategi Chunking
+
+| Strategi | Terbaik untuk |
+|----------|----------|
+| `token` (default) | Penggunaan umum — mengelompokkan pesan hingga batas token |
+| `turn` | Fokus percakapan — mengelompokkan pasangan pengguna+asisten |
+| `recursive` | Konten panjang — membagi berdasarkan paragraf, kalimat, kata |
+
+## Mengapa MemoTrail?
+
+| | MemoTrail | CLAUDE.md / File aturan | Catatan manual |
+|---|---|---|---|
+| Otomatis | Ya — mengindeks setiap sesi dimulai | Tidak — Anda menulis sendiri | Tidak |
+| Dapat dicari | Pencarian semantik | AI membaca, tapi hanya yang Anda tulis | Hanya Ctrl+F |
+| Skalabilitas | Ribuan sesi | Satu file | File tersebar |
+| Konteks-aware | Mengembalikan konteks relevan | Aturan statis | Pencarian manual |
+| Setup | 5 menit | Selalu dipelihara | Selalu dipelihara |
+
+MemoTrail tidak menggantikan `CLAUDE.md` — melengkapinya. File aturan untuk instruksi. MemoTrail untuk memori.
+
+## Peta Jalan
+
+- [x] Pengindeksan sesi Claude Code
+- [x] Pencarian semantik antar percakapan
+- [x] MCP server dengan 7 alat
+- [x] CLI untuk pengindeksan dan pencarian
+- [x] Pengindeksan otomatis saat server startup
+- [x] Ekstraksi keputusan otomatis
+- [x] Ringkasan sesi
+- [x] Kolektor Cursor IDE
+- [x] Pencarian kata kunci BM25 + pencarian hibrida
+- [x] Pemantauan file real-time (watchdog)
+- [x] Berbagai strategi chunking (token, turn, recursive)
+- [x] Ekstensi VS Code
+- [ ] Kolektor Copilot
+- [ ] Sinkronisasi cloud (Pro)
+- [ ] Memori tim (Team)
+
+## Ekstensi VS Code
+
+MemoTrail menyertakan ekstensi VS Code untuk integrasi langsung dengan IDE.
+
+**Perintah yang tersedia:**
+- `MemoTrail: Search Conversations` — pencarian semantik
+- `MemoTrail: Keyword Search` — pencarian kata kunci BM25
+- `MemoTrail: Recent Sessions` — lihat statistik sesi
+- `MemoTrail: Index Sessions Now` — jalankan pengindeksan manual
+- `MemoTrail: Show Stats` — tampilkan statistik pengindeksan
+
+**Setup:**
+```bash
+cd vscode-extension
+npm install
+npm run compile
+# Kemudian tekan F5 di VS Code untuk menjalankan Extension Development Host
+```
+
+## Pengembangan
+
+```bash
+git clone https://github.com/HalilHopa-Datatent/memotrail.git
+cd memotrail
+pip install -e ".[dev]"
+pytest
+ruff check src/
+```
+
+## Kontribusi
+
+Kontribusi diterima! Lihat [CONTRIBUTING.md](../../docs/CONTRIBUTING.md) untuk panduan.
 
 ## Lisensi
 

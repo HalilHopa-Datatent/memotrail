@@ -22,6 +22,20 @@ Každá relace zaznamenána, každé rozhodnutí vyhledatelné, každý kontext 
 
 ---
 
+## Co je nového ve v0.3.0
+
+- **Automatické shrnutí relací** — každá relace získá shrnutí vygenerované AI (nejsou potřeba API klíče)
+- **Automatická extrakce rozhodnutí** — architektonická rozhodnutí detekovaná z konverzací pomocí porovnávání vzorů
+- **BM25 vyhledávání klíčových slov** — nový nástroj `search_keyword` pro přesné termíny, chybové zprávy, názvy funkcí
+- **Hybridní vyhledávání** — kombinuje sémantické + klíčové výsledky pomocí reciprocal rank fusion
+- **Podpora Cursor IDE** — indexuje historii chatu Cursor ze souborů `state.vscdb`
+- **Sledování souborů v reálném čase** — nové relace indexovány okamžitě přes watchdog (není potřeba restart)
+- **Strategie dělení** — výběr mezi dělením na tokeny, turnové nebo rekurzivní
+- **Rozšíření VS Code** — vyhledávání, indexování a zobrazení statistik přímo z VS Code
+- **69 testů** — komplexní pokrytí testy ve všech modulech
+
+---
+
 ## Problém
 
 Každá nová relace Claude Code začíná od nuly. Vaše AI si nepamatuje včerejší 3hodinovou ladící relaci, architektonická rozhodnutí z minulého týdne ani přístupy, které již selhaly.
@@ -60,14 +74,17 @@ Začněte novou relaci a zeptejte se: *"Na čem jsme pracovali minulý týden?"*
 
 | Krok | Co se děje |
 |:----:|:-------------|
-| **1. Záznam** | MemoTrail automaticky indexuje nové relace při každém spuštění serveru |
-| **2. Rozdělení** | Konverzace jsou rozděleny na smysluplné segmenty |
+| **1. Záznam** | MemoTrail automaticky indexuje nové relace při spuštění + sleduje nové soubory v reálném čase |
+| **2. Rozdělení** | Konverzace jsou rozděleny pomocí strategie tokenové, turnové nebo rekurzivní |
 | **3. Embedding** | Každý fragment je embeddován pomocí `all-MiniLM-L6-v2` (~80MB, běží na CPU) |
-| **4. Uložení** | Vektory jdou do ChromaDB, metadata do SQLite — vše v `~/.memotrail/` |
-| **5. Hledání** | V další relaci Claude sémanticky prohledá celou vaši historii |
-| **6. Zobrazení** | Nejrelevantnější minulý kontext se objeví přesně když ho potřebujete |
+| **4. Extrakce** | Shrnutí a architektonická rozhodnutí jsou automaticky extrahovány |
+| **5. Uložení** | Vektory jdou do ChromaDB, metadata do SQLite — vše v `~/.memotrail/` |
+| **6. Hledání** | Sémantické + BM25 vyhledávání klíčových slov v celé vaší historii |
+| **7. Zobrazení** | Nejrelevantnější minulý kontext se objeví přesně když ho potřebujete |
 
 > **100% lokální** — žádný cloud, žádné API klíče, žádná data neopouští váš počítač.
+
+> **Multiplatformní** — podporuje Claude Code a Cursor IDE, další brzy.
 
 ## Dostupné Nástroje
 
@@ -76,8 +93,9 @@ Po připojení Claude Code získá tyto MCP nástroje:
 | Nástroj | Popis |
 |------|-------------|
 | `search_chats` | Sémantické vyhledávání ve všech minulých konverzacích |
-| `get_decisions` | Získání zaznamenaných architektonických rozhodnutí |
-| `get_recent_sessions` | Seznam posledních kódovacích relací se souhrny |
+| `search_keyword` | BM25 vyhledávání klíčových slov — skvělé pro přesné termíny, názvy funkcí, chybové zprávy |
+| `get_decisions` | Získání zaznamenaných architektonických rozhodnutí (auto-extrahovaných + manuálních) |
+| `get_recent_sessions` | Seznam posledních kódovacích relací se shrnutími generovanými AI |
 | `get_session_detail` | Detailní pohled na obsah konkrétní relace |
 | `save_memory` | Ruční uložení důležitých faktů nebo rozhodnutí |
 | `memory_stats` | Zobrazení statistik indexování a využití úložiště |
@@ -103,8 +121,26 @@ memotrail index                          # Ručně přeindexovat (volitelné)
 |-----------|-----------|---------|
 | Embeddingy | `all-MiniLM-L6-v2` | ~80MB, běží na CPU |
 | Vektorová DB | ChromaDB | Trvalé lokální úložiště |
+| Vyhledávání Klíčových Slov | BM25 | Čistý Python, žádné extra závislosti |
 | Metadata | SQLite | Jednosouborová databáze |
+| Sledování Souborů | watchdog | Detekce relací v reálném čase |
 | Protokol | MCP | Model Context Protocol |
+
+#### Podporované Platformy
+
+| Platforma | Stav | Formát |
+|-----------|------|--------|
+| Claude Code | Podporováno | JSONL soubory relací |
+| Cursor IDE | Podporováno | state.vscdb (SQLite) |
+| GitHub Copilot | Plánováno | — |
+
+#### Strategie Dělení
+
+| Strategie | Použití |
+|-----------|---------|
+| `token` (výchozí) | Obecné použití — seskupuje zprávy do limitu tokenů |
+| `turn` | Zaměřeno na konverzaci — seskupuje páry uživatel+asistent |
+| `recursive` | Dlouhý obsah — dělí na odstavce, věty, slova |
 
 ## Proč MemoTrail?
 
@@ -122,16 +158,30 @@ MemoTrail nenahrazuje `CLAUDE.md` — doplňuje ho. Soubory pravidel jsou pro in
 
 - [x] Indexování relací Claude Code
 - [x] Sémantické vyhledávání mezi konverzacemi
-- [x] MCP server se 6 nástroji
+- [x] MCP server se 7 nástroji
 - [x] CLI pro indexování a vyhledávání
 - [x] Auto-indexování při startu serveru
-- [ ] Automatická extrakce rozhodnutí
-- [ ] Souhrn relací
-- [ ] Kolektor Cursor
+- [x] Automatická extrakce rozhodnutí
+- [x] Shrnutí relací
+- [x] Kolektor Cursor IDE
+- [x] BM25 vyhledávání klíčových slov + hybridní vyhledávání
+- [x] Sledování souborů v reálném čase (watchdog)
+- [x] Více strategií dělení (tokenová, turnová, rekurzivní)
+- [x] Rozšíření VS Code
 - [ ] Kolektor Copilot
-- [ ] Rozšíření VS Code
 - [ ] Cloudová synchronizace (Pro)
 - [ ] Týmová paměť (Team)
+
+## Rozšíření VS Code
+
+Vyhledávejte, indexujte a prohlížejte statistiky přímo z VS Code.
+
+**Příkazy:**
+- **Search Conversations** — sémantické vyhledávání z VS Code
+- **Keyword Search** — BM25 vyhledávání přesných termínů
+- **Recent Sessions** — zobrazení posledních relací se shrnutími
+- **Index Sessions Now** — spuštění indexování na vyžádání
+- **Show Stats** — zobrazení statistik paměti
 
 ## Vývoj
 

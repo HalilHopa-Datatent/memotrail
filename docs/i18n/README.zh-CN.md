@@ -22,6 +22,18 @@
 
 ---
 
+## v0.3.0 新特性
+
+- **自动会话摘要** —— 每个会话都会生成 AI 摘要（无需 API 密钥）
+- **自动决策提取** —— 使用模式匹配从对话中检测架构决策
+- **BM25 关键词搜索** —— 新增 `search_keyword` 工具，适用于精确术语、错误信息、函数名
+- **混合搜索** —— 使用倒数排名融合结合语义 + 关键词结果
+- **Cursor IDE 支持** —— 从 `state.vscdb` 文件索引 Cursor 聊天历史
+- **实时文件监控** —— 通过 watchdog 即时索引新会话（无需重启）
+- **分块策略** —— 可选择基于 token、基于轮次或递归分割
+- **VS Code 扩展** —— 直接在 VS Code 中搜索、索引和查看统计
+- **69 个测试** —— 覆盖所有模块的全面测试
+
 ## 问题所在
 
 每次新的 Claude Code 会话都从零开始。你的 AI 不记得昨天 3 小时的调试过程、上周做出的架构决策，也不记得已经失败过的方案。
@@ -60,14 +72,17 @@ claude mcp add memotrail -- memotrail serve
 
 | 步骤 | 发生了什么 |
 |:----:|:-------------|
-| **1. 记录** | MemoTrail 在每次服务器启动时自动索引新会话 |
-| **2. 分块** | 对话被拆分为有意义的段落 |
+| **1. 记录** | MemoTrail 在启动时自动索引新会话 + 实时监控新文件 |
+| **2. 分块** | 对话使用 token、轮次或递归策略进行拆分 |
 | **3. 嵌入** | 每个分块使用 `all-MiniLM-L6-v2` 进行嵌入（约 80MB，CPU 运行） |
-| **4. 存储** | 向量存入 ChromaDB，元数据存入 SQLite —— 全部在 `~/.memotrail/` 下 |
-| **5. 搜索** | 下次会话时，Claude 对你的完整历史进行语义搜索 |
-| **6. 呈现** | 最相关的过往上下文在你需要时出现 |
+| **4. 提取** | 自动提取摘要和架构决策 |
+| **5. 存储** | 向量存入 ChromaDB，元数据存入 SQLite —— 全部在 `~/.memotrail/` 下 |
+| **6. 搜索** | 语义 + BM25 关键词搜索覆盖你的完整历史 |
+| **7. 呈现** | 最相关的过往上下文在你需要时出现 |
 
 > **100% 本地运行** —— 无需云服务，无需 API 密钥，数据不会离开你的设备。
+>
+> **多平台支持** —— 支持 Claude Code 和 Cursor IDE，更多平台即将推出。
 
 ## 可用工具
 
@@ -76,8 +91,9 @@ claude mcp add memotrail -- memotrail serve
 | 工具 | 描述 |
 |------|-------------|
 | `search_chats` | 对所有过往对话进行语义搜索 |
-| `get_decisions` | 检索记录的架构决策 |
-| `get_recent_sessions` | 列出最近的编程会话及摘要 |
+| `search_keyword` | BM25 关键词搜索 —— 适用于精确术语、函数名、错误信息 |
+| `get_decisions` | 检索记录的架构决策（自动提取 + 手动） |
+| `get_recent_sessions` | 列出最近的编程会话及 AI 生成摘要 |
 | `get_session_detail` | 深入查看特定会话的内容 |
 | `save_memory` | 手动保存重要事实或决策 |
 | `memory_stats` | 查看索引统计和存储使用情况 |
@@ -103,8 +119,26 @@ memotrail index                          # 手动重新索引（可选）
 |-----------|-----------|---------|
 | 嵌入 | `all-MiniLM-L6-v2` | 约 80MB，CPU 运行 |
 | 向量数据库 | ChromaDB | 持久化本地存储 |
+| 关键词搜索 | BM25 | 纯 Python，无额外依赖 |
 | 元数据 | SQLite | 单文件数据库 |
+| 文件监控 | watchdog | 实时会话检测 |
 | 协议 | MCP | Model Context Protocol |
+
+### 支持的平台
+
+| 平台 | 状态 | 格式 |
+|----------|--------|--------|
+| Claude Code | 已支持 | JSONL 会话文件 |
+| Cursor IDE | 已支持 | state.vscdb (SQLite) |
+| GitHub Copilot | 计划中 | — |
+
+### 分块策略
+
+| 策略 | 最佳用途 |
+|----------|----------|
+| `token`（默认） | 通用 —— 按 token 限制分组消息 |
+| `turn` | 对话导向 —— 按用户+助手对分组 |
+| `recursive` | 长内容 —— 按段落、句子、词拆分 |
 
 ## 为什么选择 MemoTrail？
 
@@ -122,16 +156,38 @@ MemoTrail 不是要替代 `CLAUDE.md` —— 而是补充它。规则文件用�
 
 - [x] Claude Code 会话索引
 - [x] 跨对话语义搜索
-- [x] 带 6 个工具的 MCP 服务器
+- [x] 带 7 个工具的 MCP 服务器
 - [x] 用于索引和搜索的 CLI
 - [x] 服务器启动时自动索引
-- [ ] 自动决策提取
-- [ ] 会话摘要
-- [ ] Cursor 收集器
+- [x] 自动决策提取
+- [x] 会话摘要
+- [x] Cursor IDE 收集器
+- [x] BM25 关键词搜索 + 混合搜索
+- [x] 实时文件监控（watchdog）
+- [x] 多种分块策略（token、turn、recursive）
+- [x] VS Code 扩展
 - [ ] Copilot 收集器
-- [ ] VS Code 扩展
 - [ ] 云同步（Pro）
 - [ ] 团队记忆（Team）
+
+## VS Code 扩展
+
+MemoTrail 包含一个 VS Code 扩展，可直接在 IDE 中集成。
+
+**可用命令：**
+- `MemoTrail: Search Conversations` —— 语义搜索
+- `MemoTrail: Keyword Search` —— BM25 关键词搜索
+- `MemoTrail: Recent Sessions` —— 查看会话统计
+- `MemoTrail: Index Sessions Now` —— 触发手动索引
+- `MemoTrail: Show Stats` —— 显示索引统计
+
+**设置：**
+```bash
+cd vscode-extension
+npm install
+npm run compile
+# 然后在 VS Code 中按 F5 启动扩展开发宿主
+```
 
 ## 开发
 

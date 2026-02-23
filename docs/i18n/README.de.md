@@ -22,6 +22,20 @@ Jede Sitzung aufgezeichnet, jede Entscheidung durchsuchbar, jeder Kontext gespei
 
 ---
 
+## Neu in v0.3.0
+
+- **Automatische Sitzungszusammenfassung** -- jede Sitzung erhalt eine KI-generierte Zusammenfassung (keine API-Schlussel erforderlich)
+- **Automatische Entscheidungsextraktion** -- Architekturentscheidungen werden durch Mustererkennung aus Gesprachen erkannt
+- **BM25-Schluesselwortsuche** -- neues `search_keyword`-Tool fur exakte Begriffe, Fehlermeldungen, Funktionsnamen
+- **Hybride Suche** -- kombiniert semantische + Schluesselwort-Ergebnisse mittels Reciprocal Rank Fusion
+- **Cursor IDE-Unterstuetzung** -- indexiert Cursor-Chatverlauf aus `state.vscdb`-Dateien
+- **Echtzeit-Dateiueberwachung** -- neue Sitzungen werden sofort uber watchdog indexiert (kein Neustart erforderlich)
+- **Chunking-Strategien** -- Wahl zwischen Token-basiert, Turn-basiert oder rekursivem Splitting
+- **VS Code Erweiterung** -- Suchen, Indexieren und Statistiken direkt in VS Code anzeigen
+- **69 Tests** -- umfassende Testabdeckung uber alle Module
+
+---
+
 ## Das Problem
 
 Jede neue Claude Code Sitzung beginnt bei Null. Deine AI erinnert sich nicht an die 3-stündige Debugging-Session von gestern, die Architekturentscheidungen von letzter Woche oder die Ansätze, die bereits gescheitert sind.
@@ -60,14 +74,17 @@ Starte eine neue Sitzung und frage: *"Woran haben wir letzte Woche gearbeitet?"*
 
 | Schritt | Was passiert |
 |:----:|:-------------|
-| **1. Aufzeichnen** | MemoTrail indexiert neue Sitzungen automatisch bei jedem Serverstart |
-| **2. Aufteilen** | Gespräche werden in sinnvolle Segmente aufgeteilt |
-| **3. Einbetten** | Jeder Abschnitt wird mit `all-MiniLM-L6-v2` eingebettet (~80MB, läuft auf CPU) |
-| **4. Speichern** | Vektoren gehen in ChromaDB, Metadaten in SQLite — alles unter `~/.memotrail/` |
-| **5. Suchen** | In der nächsten Sitzung durchsucht Claude deinen gesamten Verlauf semantisch |
-| **6. Anzeigen** | Der relevanteste vergangene Kontext erscheint genau dann, wenn du ihn brauchst |
+| **1. Aufzeichnen** | MemoTrail indexiert neue Sitzungen beim Start automatisch + uberwacht neue Dateien in Echtzeit |
+| **2. Aufteilen** | Gesprache werden mit Token-, Turn-basierten oder rekursiven Strategien aufgeteilt |
+| **3. Einbetten** | Jeder Abschnitt wird mit `all-MiniLM-L6-v2` eingebettet (~80MB, lauft auf CPU) |
+| **4. Extrahieren** | Zusammenfassungen und Architekturentscheidungen werden automatisch extrahiert |
+| **5. Speichern** | Vektoren gehen in ChromaDB, Metadaten in SQLite -- alles unter `~/.memotrail/` |
+| **6. Suchen** | Semantische + BM25-Schluesselwortsuche uber deinen gesamten Verlauf |
+| **7. Anzeigen** | Der relevanteste vergangene Kontext erscheint genau dann, wenn du ihn brauchst |
 
-> **100% lokal** — keine Cloud, keine API-Schlüssel, keine Daten verlassen deinen Rechner.
+> **100% lokal** -- keine Cloud, keine API-Schlussel, keine Daten verlassen deinen Rechner.
+
+> **Multi-Plattform** -- unterstutzt Claude Code und Cursor IDE, weitere folgen bald.
 
 ## Verfügbare Tools
 
@@ -75,9 +92,10 @@ Nach der Verbindung erhält Claude Code diese MCP-Tools:
 
 | Tool | Beschreibung |
 |------|-------------|
-| `search_chats` | Semantische Suche über alle vergangenen Gespräche |
-| `get_decisions` | Aufgezeichnete Architekturentscheidungen abrufen |
-| `get_recent_sessions` | Letzte Coding-Sitzungen mit Zusammenfassungen auflisten |
+| `search_chats` | Semantische Suche uber alle vergangenen Gesprache |
+| `search_keyword` | BM25-Schluesselwortsuche -- ideal fur exakte Begriffe, Funktionsnamen, Fehlermeldungen |
+| `get_decisions` | Aufgezeichnete Architekturentscheidungen abrufen (automatisch extrahiert + manuell) |
+| `get_recent_sessions` | Letzte Coding-Sitzungen mit KI-generierten Zusammenfassungen auflisten |
 | `get_session_detail` | Detaillierter Einblick in den Inhalt einer bestimmten Sitzung |
 | `save_memory` | Wichtige Fakten oder Entscheidungen manuell speichern |
 | `memory_stats` | Indexierungsstatistiken und Speichernutzung anzeigen |
@@ -101,10 +119,28 @@ memotrail index                          # Manuell neu indexieren (optional)
 
 | Komponente | Technologie | Details |
 |-----------|-----------|---------|
-| Embeddings | `all-MiniLM-L6-v2` | ~80MB, läuft auf CPU |
+| Embeddings | `all-MiniLM-L6-v2` | ~80MB, lauft auf CPU |
 | Vektor-DB | ChromaDB | Persistenter lokaler Speicher |
+| Schluesselwortsuche | BM25 | Reines Python, keine zusatzlichen Abhangigkeiten |
 | Metadaten | SQLite | Einzeldatei-Datenbank |
+| Dateiuberwachung | watchdog | Echtzeit-Sitzungserkennung |
 | Protokoll | MCP | Model Context Protocol |
+
+#### Unterstutzte Plattformen
+
+| Plattform | Status | Details |
+|-----------|--------|---------|
+| Claude Code | Unterstutzt | JSONL-Sitzungsdateien |
+| Cursor IDE | Unterstutzt | state.vscdb (SQLite) |
+| GitHub Copilot | Geplant | -- |
+
+#### Chunking-Strategien
+
+| Strategie | Anwendungsbereich |
+|-----------|------------------|
+| `token` (Standard) | Allgemeine Nutzung -- gruppiert Nachrichten bis zum Token-Limit |
+| `turn` | Gesprachsfokussiert -- gruppiert Benutzer+Assistent-Paare |
+| `recursive` | Langer Inhalt -- teilt nach Absatzen, Satzen, Wortern |
 
 ## Warum MemoTrail?
 
@@ -121,17 +157,30 @@ MemoTrail ersetzt nicht `CLAUDE.md` — es ergänzt es. Regeldateien sind für A
 ## Roadmap
 
 - [x] Claude Code Sitzungsindexierung
-- [x] Semantische Suche über Gespräche
-- [x] MCP-Server mit 6 Tools
-- [x] CLI für Indexierung und Suche
+- [x] Semantische Suche uber Gesprache
+- [x] MCP-Server mit 7 Tools
+- [x] CLI fur Indexierung und Suche
 - [x] Auto-Indexierung beim Serverstart
-- [ ] Automatische Entscheidungsextraktion
-- [ ] Sitzungszusammenfassung
-- [ ] Cursor-Kollektor
+- [x] Automatische Entscheidungsextraktion
+- [x] Sitzungszusammenfassung
+- [x] Cursor IDE-Kollektor
+- [x] BM25-Schluesselwortsuche + hybride Suche
+- [x] Echtzeit-Dateiuberwachung (watchdog)
+- [x] Mehrere Chunking-Strategien (token, turn, recursive)
+- [x] VS Code Erweiterung
 - [ ] Copilot-Kollektor
-- [ ] VS Code Erweiterung
 - [ ] Cloud-Synchronisation (Pro)
 - [ ] Team-Speicher (Team)
+
+## VS Code Erweiterung
+
+MemoTrail funktioniert direkt in VS Code. Verwende die folgenden Befehle aus der Befehlspalette:
+
+- **MemoTrail: Gesprache durchsuchen** -- semantische Suche in vergangenen Sitzungen
+- **MemoTrail: Schluesselwortsuche** -- BM25-Schluesselwortsuche
+- **MemoTrail: Letzte Sitzungen** -- aktuelle Coding-Sitzungen anzeigen
+- **MemoTrail: Sitzungen jetzt indexieren** -- Sitzungen sofort indexieren
+- **MemoTrail: Statistiken anzeigen** -- Indexierungsstatistiken anzeigen
 
 ## Entwicklung
 
