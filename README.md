@@ -20,17 +20,17 @@ Every session recorded, every decision searchable, every context remembered.
 
 ---
 
-## What's New in v0.3.0
+## What's New in v0.3.1
 
+- **Smart auto-chunking** — automatically picks the best chunking strategy per session (short → turn, long messages → recursive, medium → token)
 - **Automatic session summarization** — every session gets an AI-generated summary (no API keys needed)
 - **Automatic decision extraction** — architectural decisions detected from conversations using pattern matching
 - **BM25 keyword search** — new `search_keyword` tool for exact terms, error messages, function names
 - **Hybrid search** — combines semantic + keyword results using reciprocal rank fusion
 - **Cursor IDE support** — indexes Cursor chat history from `state.vscdb` files
 - **Real-time file watching** — new sessions indexed instantly via watchdog (no restart needed)
-- **Chunking strategies** — choose between token-based, turn-based, or recursive splitting
 - **VS Code extension** — search, index, and view stats directly from VS Code
-- **69 tests** — comprehensive test coverage across all modules
+- **73 tests** — comprehensive test coverage across all modules
 
 ## The Problem
 
@@ -143,9 +143,12 @@ memotrail index                          # Manually re-index (optional)
 
 | Strategy | Best for |
 |----------|----------|
-| `token` (default) | General use — groups messages up to token limit |
+| `auto` (default) | Automatically picks the best strategy per session |
+| `token` | General use — groups messages up to token limit |
 | `turn` | Conversation-focused — groups user+assistant pairs |
 | `recursive` | Long content — splits on paragraphs, sentences, words |
+
+> **Auto strategy rules:** ≤20 messages → `turn`, avg ≥300 tokens/message → `recursive`, otherwise → `token`. No configuration needed.
 
 ## Why MemoTrail?
 
