@@ -8,11 +8,11 @@ memotrail() {
         stats)
             echo "MemoTrail Stats"
             echo "=============================="
-            echo "Sessions indexed:     16"
-            echo "Messages stored:      4,590"
-            echo "Decisions recorded:   12"
-            echo "Chat chunks:          1,852"
-            echo "Memory notes:         5"
+            echo "Sessions indexed:     24"
+            echo "Messages stored:      6,210"
+            echo "Decisions recorded:   18"
+            echo "Chat chunks:          2,940"
+            echo "Memory notes:         8"
             ;;
         search)
             shift
@@ -122,6 +122,26 @@ memotrail() {
                     echo "  SQLAlchemy async, JWT tokens for auth."
                     ;;
             esac
+            ;;
+        save-memory)
+            shift
+            text="$*"
+            if [ -z "$__MEMO_SAVE_STATE" ]; then
+                export __MEMO_SAVE_STATE=1
+                echo ""
+                echo "Consolidation: ADD (new memory)"
+                echo "Memory saved: mem_f8a1b3e7 — \"$text\""
+            elif [ "$__MEMO_SAVE_STATE" = "1" ]; then
+                export __MEMO_SAVE_STATE=2
+                echo ""
+                echo "Consolidation: NOOP (duplicate detected)"
+                echo "Memory already exists: mem_f8a1b3e7 — \"$text\""
+            else
+                export __MEMO_SAVE_STATE=0
+                echo ""
+                echo "Consolidation: DELETE mem_f8a1b3e7 + ADD (contradiction detected)"
+                echo "Memory replaced: mem_d3b2c9a1 — \"$text\""
+            fi
             ;;
     esac
 }
