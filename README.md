@@ -20,17 +20,20 @@ Every session recorded, every decision searchable, every context remembered.
 
 ---
 
-## What's New in v0.3.1
+## What's New in v0.4.0
 
-- **Smart auto-chunking** — automatically picks the best chunking strategy per session (short → turn, long messages → recursive, medium → token)
-- **Automatic session summarization** — every session gets an AI-generated summary (no API keys needed)
-- **Automatic decision extraction** — architectural decisions detected from conversations using pattern matching
-- **BM25 keyword search** — new `search_keyword` tool for exact terms, error messages, function names
-- **Hybrid search** — combines semantic + keyword results using reciprocal rank fusion
-- **Cursor IDE support** — indexes Cursor chat history from `state.vscdb` files
-- **Real-time file watching** — new sessions indexed instantly via watchdog (no restart needed)
-- **VS Code extension** — search, index, and view stats directly from VS Code
-- **73 tests** — comprehensive test coverage across all modules
+- **Memory consolidation** — duplicate detection for memories and decisions using embedding similarity. Automatically decides: ADD (new info), UPDATE (richer version), DELETE (contradiction detected), or NOOP (duplicate skipped)
+- **Contradiction detection** — regex-based patterns detect when new information replaces old ("switched from X to Y", "no longer using X") and automatically cleans up stale records
+- **Search reranking** — optional cross-encoder reranking (`cross-encoder/ms-marco-MiniLM-L-6-v2`) for higher quality search results. Disabled by default, enable with `reranker_enabled=True`
+- **Smarter `save_memory`** — now reports what happened: "saved", "updated", "replaced", or "already exists"
+- **108 tests** — comprehensive test coverage across all modules
+
+### Previous (v0.3.1)
+
+- Smart auto-chunking — automatically picks the best chunking strategy per session
+- Automatic session summarization and decision extraction
+- BM25 keyword search + hybrid search (semantic + keyword with RRF)
+- Cursor IDE support, real-time file watching, VS Code extension
 
 ## The Problem
 
@@ -82,8 +85,10 @@ Start a new session and ask: *"What did we work on last week?"*
 | **3. Embed** | Each chunk is embedded using `all-MiniLM-L6-v2` (~80MB, runs on CPU) |
 | **4. Extract** | Summaries and architectural decisions are automatically extracted |
 | **5. Store** | Vectors go to ChromaDB, metadata to SQLite — all under `~/.memotrail/` |
-| **6. Search** | Semantic + BM25 keyword search across your full history |
-| **7. Surface** | The most relevant past context appears right when you need it |
+| **6. Consolidate** | Deduplicates memories and decisions — no stale or duplicate data |
+| **7. Search** | Semantic + BM25 keyword search across your full history |
+| **8. Rerank** | Optional cross-encoder reranking for higher precision results |
+| **9. Surface** | The most relevant past context appears right when you need it |
 
 > **100% local** — no cloud, no API keys, no data leaves your machine.
 >
@@ -102,7 +107,7 @@ Once connected, Claude Code gets these MCP tools:
 | `get_decisions` | Retrieve recorded architectural decisions (auto-extracted + manual) |
 | `get_recent_sessions` | List recent coding sessions with AI-generated summaries |
 | `get_session_detail` | Deep dive into a specific session's content |
-| `save_memory` | Manually save important facts or decisions |
+| `save_memory` | Save facts or decisions — auto-deduplicates and detects contradictions |
 | `memory_stats` | View indexing statistics and storage usage |
 
 ## CLI Commands
@@ -125,8 +130,10 @@ memotrail index                          # Manually re-index (optional)
 | Component | Technology | Details |
 |-----------|-----------|---------|
 | Embeddings | `all-MiniLM-L6-v2` | ~80MB, runs on CPU |
+| Reranking | `cross-encoder/ms-marco-MiniLM-L-6-v2` | ~80MB, optional, CPU |
 | Vector DB | ChromaDB | Persistent, local storage |
 | Keyword Search | BM25 | Pure Python, no extra dependencies |
+| Consolidation | Embedding similarity + regex | Dedup, update, contradiction detection |
 | Metadata | SQLite | Single-file database |
 | File Watching | watchdog | Real-time session detection |
 | Protocol | MCP | Model Context Protocol |
@@ -176,6 +183,8 @@ MemoTrail doesn't replace `CLAUDE.md` — it complements it. Rules files are for
 - [x] Real-time file watching (watchdog)
 - [x] Multiple chunking strategies (token, turn, recursive)
 - [x] VS Code extension
+- [x] Memory consolidation (dedup, update, contradiction detection)
+- [x] Cross-encoder search reranking (optional)
 - [ ] Copilot collector
 - [ ] Cloud sync (Pro)
 - [ ] Team memory (Team)
