@@ -173,6 +173,104 @@ class TestSQLiteStore:
 
             store.close()
 
+    def test_memory_crud(self):
+        with tempfile.NamedTemporaryFile(suffix=".db") as tmp:
+            store = SQLiteStore(db_path=Path(tmp.name))
+            store.connect()
+
+            # Create
+            memory_id = store.save_memory("Use Redis for caching", ["infra"])
+            assert memory_id.startswith("mem_")
+
+            # Read
+            mem = store.get_memory(memory_id)
+            assert mem is not None
+            assert mem["content"] == "Use Redis for caching"
+            assert mem["tags"] == ["infra"]
+
+            # Update
+            store.update_memory(memory_id, "Use Memcached for caching", ["infra", "updated"])
+            mem = store.get_memory(memory_id)
+            assert mem["content"] == "Use Memcached for caching"
+            assert mem["tags"] == ["infra", "updated"]
+
+            # Delete
+            store.delete_memory(memory_id)
+            assert store.get_memory(memory_id) is None
+
+            store.close()
+
+    def test_decision_crud(self):
+        with tempfile.NamedTemporaryFile(suffix=".db") as tmp:
+            store = SQLiteStore(db_path=Path(tmp.name))
+            store.connect()
+
+            session = store.create_session(project="test")
+
+            # Create
+            dec = store.add_decision(session.id, "Use REST API", context="team decision")
+            assert dec.id.startswith("dec_")
+
+            # Read
+            retrieved = store.get_decision(dec.id)
+            assert retrieved is not None
+            assert retrieved.decision_text == "Use REST API"
+
+            # Update
+            store.update_decision(dec.id, "Use GraphQL API", context="changed mind")
+            retrieved = store.get_decision(dec.id)
+            assert retrieved.decision_text == "Use GraphQL API"
+            assert retrieved.context == "changed mind"
+
+            # Delete
+            store.delete_decision(dec.id)
+            assert store.get_decision(dec.id) is None
+
+            store.close()
+
+    def test_update_memory_content_only(self):
+        """Update memory content without changing tags."""
+        with tempfile.NamedTemporaryFile(suffix=".db") as tmp:
+            store = SQLiteStore(db_path=Path(tmp.name))
+            store.connect()
+
+            memory_id = store.save_memory("Original", ["tag1"])
+            store.update_memory(memory_id, "Updated")
+            mem = store.get_memory(memory_id)
+            assert mem["content"] == "Updated"
+            assert mem["tags"] == ["tag1"]  # Tags unchanged
+
+            store.close()
+
+    def test_update_decision_text_only(self):
+        """Update decision text without changing context."""
+        with tempfile.NamedTemporaryFile(suffix=".db") as tmp:
+            store = SQLiteStore(db_path=Path(tmp.name))
+            store.connect()
+
+            session = store.create_session()
+            dec = store.add_decision(session.id, "Original", context="ctx")
+            store.update_decision(dec.id, "Updated")
+            retrieved = store.get_decision(dec.id)
+            assert retrieved.decision_text == "Updated"
+            assert retrieved.context == "ctx"  # Context unchanged
+
+            store.close()
+
+    def test_get_nonexistent_memory(self):
+        with tempfile.NamedTemporaryFile(suffix=".db") as tmp:
+            store = SQLiteStore(db_path=Path(tmp.name))
+            store.connect()
+            assert store.get_memory("mem_nonexistent") is None
+            store.close()
+
+    def test_get_nonexistent_decision(self):
+        with tempfile.NamedTemporaryFile(suffix=".db") as tmp:
+            store = SQLiteStore(db_path=Path(tmp.name))
+            store.connect()
+            assert store.get_decision("dec_nonexistent") is None
+            store.close()
+
     def test_stats(self):
         with tempfile.NamedTemporaryFile(suffix=".db") as tmp:
             store = SQLiteStore(db_path=Path(tmp.name))

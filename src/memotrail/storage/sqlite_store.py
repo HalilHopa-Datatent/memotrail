@@ -295,6 +295,80 @@ class SQLiteStore:
         self.conn.commit()
         return memory_id
 
+    # ── Memory CRUD ───────────────────────────────────────────
+
+    def get_memory(self, memory_id: str) -> Optional[dict]:
+        """Get a memory by ID."""
+        row = self.conn.execute(
+            "SELECT * FROM memories WHERE id = ?", (memory_id,)
+        ).fetchone()
+        if not row:
+            return None
+        return {
+            "id": row["id"],
+            "content": row["content"],
+            "tags": json.loads(row["tags"]),
+            "created_at": row["created_at"],
+            "updated_at": row["updated_at"],
+        }
+
+    def update_memory(self, memory_id: str, content: str, tags: Optional[list[str]] = None) -> None:
+        """Update an existing memory."""
+        now = datetime.now(timezone.utc).isoformat()
+        if tags is not None:
+            self.conn.execute(
+                "UPDATE memories SET content = ?, tags = ?, updated_at = ? WHERE id = ?",
+                (content, json.dumps(tags), now, memory_id),
+            )
+        else:
+            self.conn.execute(
+                "UPDATE memories SET content = ?, updated_at = ? WHERE id = ?",
+                (content, now, memory_id),
+            )
+        self.conn.commit()
+
+    def delete_memory(self, memory_id: str) -> None:
+        """Delete a memory by ID."""
+        self.conn.execute("DELETE FROM memories WHERE id = ?", (memory_id,))
+        self.conn.commit()
+
+    # ── Decision CRUD ────────────────────────────────────────
+
+    def get_decision(self, decision_id: str) -> Optional[Decision]:
+        """Get a decision by ID."""
+        row = self.conn.execute(
+            "SELECT * FROM decisions WHERE id = ?", (decision_id,)
+        ).fetchone()
+        if not row:
+            return None
+        return Decision(
+            id=row["id"],
+            session_id=row["session_id"],
+            decision_text=row["decision_text"],
+            context=row["context"],
+            category=row["category"],
+            created_at=row["created_at"],
+        )
+
+    def update_decision(self, decision_id: str, decision_text: str, context: Optional[str] = None) -> None:
+        """Update an existing decision."""
+        if context is not None:
+            self.conn.execute(
+                "UPDATE decisions SET decision_text = ?, context = ? WHERE id = ?",
+                (decision_text, context, decision_id),
+            )
+        else:
+            self.conn.execute(
+                "UPDATE decisions SET decision_text = ? WHERE id = ?",
+                (decision_text, decision_id),
+            )
+        self.conn.commit()
+
+    def delete_decision(self, decision_id: str) -> None:
+        """Delete a decision by ID."""
+        self.conn.execute("DELETE FROM decisions WHERE id = ?", (decision_id,))
+        self.conn.commit()
+
     # ── File tracking ────────────────────────────────────────
 
     def is_file_indexed(self, file_path: str) -> bool:

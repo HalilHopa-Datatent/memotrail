@@ -4,8 +4,9 @@ from dataclasses import dataclass
 
 from memotrail.core.bm25 import BM25Index
 from memotrail.core.embedder import Embedder
+from memotrail.core.reranker import Reranker
 from memotrail.storage import ChromaStore, SQLiteStore, SearchResult
-from memotrail.utils import get_logger
+from memotrail.utils import config, get_logger
 
 logger = get_logger("memotrail.core.searcher")
 
@@ -34,6 +35,16 @@ class Searcher:
         self.chroma = chroma_store or ChromaStore()
         self.embedder = embedder or Embedder()
         self._bm25_index: BM25Index | None = None
+        self._reranker: Reranker | None = None
+
+    @property
+    def reranker(self) -> Reranker | None:
+        """Lazy-init reranker if enabled in config."""
+        if not config.reranker_enabled:
+            return None
+        if self._reranker is None:
+            self._reranker = Reranker()
+        return self._reranker
 
     def search_chats(
         self,
@@ -57,9 +68,14 @@ class Searcher:
         if project:
             where = {"project": project}
 
+        # Over-fetch if reranker is enabled
+        fetch_limit = limit
+        if self.reranker:
+            fetch_limit = limit * config.reranker_candidate_multiplier
+
         results = self.chroma.search(
             query_embedding=query_embedding,
-            limit=limit,
+            limit=fetch_limit,
             collection=ChromaStore.CHAT_COLLECTION,
             where=where,
         )
@@ -81,6 +97,10 @@ class Searcher:
                 timestamp=r.metadata.get("timestamp"),
                 session_summary=session.summary if session else None,
             ))
+
+        # Rerank if enabled
+        if self.reranker and enriched:
+            enriched = self.reranker.rerank(query, enriched, limit)
 
         return enriched
 
@@ -109,7 +129,12 @@ class Searcher:
         if project:
             where = {"project": project}
 
-        bm25_results = self._bm25_index.search(query, limit=limit, where=where)
+        # Over-fetch if reranker is enabled
+        fetch_limit = limit
+        if self.reranker:
+            fetch_limit = limit * config.reranker_candidate_multiplier
+
+        bm25_results = self._bm25_index.search(query, limit=fetch_limit, where=where)
 
         session_cache: dict = {}
         enriched = []
@@ -127,6 +152,10 @@ class Searcher:
                 timestamp=r.metadata.get("timestamp"),
                 session_summary=session.summary if session else None,
             ))
+
+        # Rerank if enabled
+        if self.reranker and enriched:
+            enriched = self.reranker.rerank(query, enriched, limit)
 
         return enriched
 
@@ -175,8 +204,11 @@ class Searcher:
         # Sort by fused score
         sorted_keys = sorted(rrf_scores.keys(), key=lambda x: rrf_scores[x], reverse=True)
 
+        # Take more candidates if reranker is enabled
+        top_k = limit * config.reranker_candidate_multiplier if self.reranker else limit
+
         results = []
-        for key in sorted_keys[:limit]:
+        for key in sorted_keys[:top_k]:
             r = result_map[key]
             results.append(ChatSearchResult(
                 chunk_text=r.chunk_text,
@@ -186,6 +218,10 @@ class Searcher:
                 timestamp=r.timestamp,
                 session_summary=r.session_summary,
             ))
+
+        # Rerank if enabled
+        if self.reranker and results:
+            results = self.reranker.rerank(query, results, limit)
 
         return results
 

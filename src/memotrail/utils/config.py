@@ -38,6 +38,15 @@ class Config:
     context_budget_retrieved: int = 8_000
     context_budget_recent: int = 4_000
 
+    # Consolidation settings
+    consolidation_noop_threshold: float = 0.92
+    consolidation_update_threshold: float = 0.78
+
+    # Reranker settings
+    reranker_enabled: bool = False
+    reranker_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+    reranker_candidate_multiplier: int = 3
+
     # Claude Code collector
     claude_code_log_dir: Path = field(
         default_factory=lambda: Path.home() / ".claude" / "projects"

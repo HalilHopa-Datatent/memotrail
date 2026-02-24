@@ -386,14 +386,24 @@ async def _search_keyword(args: dict) -> list[TextContent]:
 
 
 async def _save_memory(args: dict) -> list[TextContent]:
+    from memotrail.core.consolidator import ConsolidationAction
+
     content = args["content"]
     tags = args.get("tags", [])
 
-    memory_id = indexer.index_memory(content, tags)
+    memory_id, action = indexer.index_memory(content, tags)
+
+    action_labels = {
+        ConsolidationAction.ADD: "saved",
+        ConsolidationAction.UPDATE: "updated",
+        ConsolidationAction.DELETE: "replaced",
+        ConsolidationAction.NOOP: "already exists",
+    }
+    label = action_labels.get(action, "saved")
 
     return [TextContent(
         type="text",
-        text=f"Memory saved: {memory_id}\nContent: {content}\nTags: {', '.join(tags) if tags else 'none'}",
+        text=f"Memory {label}: {memory_id}\nContent: {content}\nTags: {', '.join(tags) if tags else 'none'}",
     )]
 
 

@@ -122,6 +122,36 @@ class ChromaStore:
         col = self._get_collection(collection)
         return col.count()
 
+    def update_chunk(
+        self,
+        chunk_id: str,
+        text: str,
+        embedding: list[float],
+        metadata: dict,
+        collection: str = CHAT_COLLECTION,
+    ) -> None:
+        """Update a single chunk by ID."""
+        col = self._get_collection(collection)
+        col.update(
+            ids=[chunk_id],
+            documents=[text],
+            embeddings=[embedding],
+            metadatas=[metadata],
+        )
+        logger.info(f"Updated chunk {chunk_id} in '{collection}'")
+
+    def delete_by_ids(
+        self,
+        ids: list[str],
+        collection: str = CHAT_COLLECTION,
+    ) -> None:
+        """Delete chunks by their IDs."""
+        if not ids:
+            return
+        col = self._get_collection(collection)
+        col.delete(ids=ids)
+        logger.info(f"Deleted {len(ids)} chunk(s) from '{collection}'")
+
     def delete_by_session(self, session_id: str, collection: str = CHAT_COLLECTION) -> None:
         """Delete all chunks for a session."""
         col = self._get_collection(collection)
