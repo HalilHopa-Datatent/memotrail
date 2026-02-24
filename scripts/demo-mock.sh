@@ -3,6 +3,24 @@
 # Based on realistic e-commerce API development sessions
 # Usage: source scripts/demo-mock.sh
 
+pip() {
+    if [ "$1" = "install" ] && [ "$2" = "memotrail" ]; then
+        echo "Collecting memotrail"
+        sleep 0.3
+        echo "  Downloading memotrail-0.4.0-py3-none-any.whl (42 kB)"
+        sleep 0.2
+        echo "Installing collected packages: memotrail"
+        sleep 0.3
+        echo "Successfully installed memotrail-0.4.0"
+    fi
+}
+
+claude() {
+    if [ "$1" = "mcp" ] && [ "$2" = "add" ] && [ "$3" = "memotrail" ]; then
+        echo "Added stdio MCP server memotrail with command: memotrail serve"
+    fi
+}
+
 memotrail() {
     case "$1" in
         stats)

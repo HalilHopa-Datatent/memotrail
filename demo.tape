@@ -20,42 +20,69 @@ Enter
 Sleep 2s
 Show
 
-# --- Scene 1: Stats ---
+# --- Scene 1: Install ---
 Sleep 500ms
+Type "pip install memotrail"
+Sleep 400ms
+Enter
+Sleep 4s
+
+Type "clear"
+Enter
+Sleep 500ms
+
+# --- Scene 2: Connect to Claude Code ---
+Type "claude mcp add memotrail -- memotrail serve"
+Sleep 400ms
+Enter
+Sleep 3s
+
+Type "clear"
+Enter
+Sleep 500ms
+
+# --- Scene 3: Stats ---
 Type "memotrail stats"
 Sleep 400ms
 Enter
 Sleep 3s
 
-# --- Scene 2: Search ---
+Type "clear"
+Enter
+Sleep 500ms
+
+# --- Scene 4: Search ---
 Type@55ms 'memotrail search "why did we choose Redis for caching"'
 Sleep 400ms
 Enter
 Sleep 8s
 
-# --- Scene 3: Save memory ---
-Type@55ms 'memotrail save-memory "We use Redis for caching with 5-min TTL"'
-Sleep 400ms
-Enter
-Sleep 3s
-
-# --- Scene 4: Duplicate detection (consolidation) ---
-Type@55ms 'memotrail save-memory "We use Redis for caching with 5-min TTL"'
-Sleep 400ms
-Enter
-Sleep 3s
-
-# --- Scene 5: Contradiction detection ---
-Type@55ms 'memotrail save-memory "Switched from Redis to Memcached for caching"'
-Sleep 400ms
-Enter
-Sleep 3s
-
-# --- Scene 6: Connect to Claude Code ---
-Type "# Add to Claude Code — one command:"
+Type "clear"
 Enter
 Sleep 500ms
-Type "claude mcp add memotrail -- memotrail serve"
-Sleep 1.5s
+
+# --- Scene 5: Save memory ---
+Type@55ms 'memotrail save-memory "We use Redis for caching with 5-min TTL"'
+Sleep 400ms
+Enter
+Sleep 3s
+
+Type "clear"
+Enter
+Sleep 500ms
+
+# --- Scene 6: Duplicate detection (consolidation) ---
+Type@55ms 'memotrail save-memory "We use Redis for caching with 5-min TTL"'
+Sleep 400ms
+Enter
+Sleep 3s
+
+Type "clear"
+Enter
+Sleep 500ms
+
+# --- Scene 7: Contradiction detection ---
+Type@55ms 'memotrail save-memory "Switched from Redis to Memcached for caching"'
+Sleep 400ms
 Enter
 Sleep 3s
