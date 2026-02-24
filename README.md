@@ -74,6 +74,8 @@ Start a new session and ask: *"What did we work on last week?"*
 
 <div align="center">
 <img src="demo.gif" alt="MemoTrail Demo" width="800">
+<br>
+<sub>Install → Connect → See stats → Search past sessions → Save memory → Duplicate &amp; contradiction detection</sub>
 </div>
 
 ## How It Works
