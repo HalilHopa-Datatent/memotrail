@@ -65,6 +65,13 @@ claude mcp add memotrail -- memotrail serve
 
 Itu saja. MemoTrail secara otomatis mengindeks riwayat Anda saat pertama kali diluncurkan.
 
+
+<div align="center">
+<img src="../../demo.gif" alt="MemoTrail Demo" width="800">
+<br>
+<sub>Install → Connect → See stats → Search past sessions → Save memory → Duplicate &amp; contradiction detection</sub>
+</div>
+
 ## Cara Kerjanya
 
 | Langkah | Apa yang terjadi |

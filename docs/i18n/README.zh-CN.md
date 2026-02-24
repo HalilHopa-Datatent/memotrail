@@ -68,6 +68,13 @@ claude mcp add memotrail -- memotrail serve
 就这样。MemoTrail 会在首次启动时自动索引你的历史记录。
 开始新会话并询问：*"我们上周做了什么？"*
 
+
+<div align="center">
+<img src="../../demo.gif" alt="MemoTrail Demo" width="800">
+<br>
+<sub>Install → Connect → See stats → Search past sessions → Save memory → Duplicate &amp; contradiction detection</sub>
+</div>
+
 ## 工作原理
 
 | 步骤 | 发生了什么 |

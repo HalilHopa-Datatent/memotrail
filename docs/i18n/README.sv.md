@@ -65,6 +65,13 @@ claude mcp add memotrail -- memotrail serve
 
 Det är allt. MemoTrail indexerar automatiskt din historik vid första starten.
 
+
+<div align="center">
+<img src="../../demo.gif" alt="MemoTrail Demo" width="800">
+<br>
+<sub>Install → Connect → See stats → Search past sessions → Save memory → Duplicate &amp; contradiction detection</sub>
+</div>
+
 ## Hur Det Fungerar
 
 | Steg | Vad som händer |

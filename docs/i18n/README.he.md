@@ -68,6 +68,13 @@ claude mcp add memotrail -- memotrail serve
 זהו. MemoTrail מאנדקס אוטומטית את ההיסטוריה שלך בהפעלה הראשונה.
 התחל סשן חדש ושאל: *"על מה עבדנו בשבוע שעבר?"*
 
+
+<div align="center">
+<img src="../../demo.gif" alt="MemoTrail Demo" width="800">
+<br>
+<sub>Install → Connect → See stats → Search past sessions → Save memory → Duplicate &amp; contradiction detection</sub>
+</div>
+
 ## איך זה עובד
 
 | שלב | מה קורה |

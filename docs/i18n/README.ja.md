@@ -68,6 +68,13 @@ claude mcp add memotrail -- memotrail serve
 以上です。MemoTrail は初回起動時に自動的に履歴をインデックスします。
 新しいセッションを開始して聞いてみましょう：*「先週何をしましたか？」*
 
+
+<div align="center">
+<img src="../../demo.gif" alt="MemoTrail Demo" width="800">
+<br>
+<sub>Install → Connect → See stats → Search past sessions → Save memory → Duplicate &amp; contradiction detection</sub>
+</div>
+
 ## 仕組み
 
 | ステップ | 何が起こるか |

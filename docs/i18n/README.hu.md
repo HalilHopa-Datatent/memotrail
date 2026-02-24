@@ -65,6 +65,13 @@ claude mcp add memotrail -- memotrail serve
 
 Ennyi. A MemoTrail automatikusan indexeli az előzményeidet az első indításkor.
 
+
+<div align="center">
+<img src="../../demo.gif" alt="MemoTrail Demo" width="800">
+<br>
+<sub>Install → Connect → See stats → Search past sessions → Save memory → Duplicate &amp; contradiction detection</sub>
+</div>
+
 ## Hogyan Működik
 
 | Lépés | Mi történik |

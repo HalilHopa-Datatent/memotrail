@@ -65,6 +65,13 @@ claude mcp add memotrail -- memotrail serve
 
 Vậy thôi. MemoTrail tự động lập chỉ mục lịch sử của bạn khi khởi chạy lần đầu.
 
+
+<div align="center">
+<img src="../../demo.gif" alt="MemoTrail Demo" width="800">
+<br>
+<sub>Install → Connect → See stats → Search past sessions → Save memory → Duplicate &amp; contradiction detection</sub>
+</div>
+
 ## Cách Hoạt Động
 
 | Bước | Điều gì xảy ra |

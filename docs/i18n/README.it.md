@@ -70,6 +70,13 @@ claude mcp add memotrail -- memotrail serve
 Tutto qui. MemoTrail indicizza automaticamente la tua cronologia al primo avvio.
 Inizia una nuova sessione e chiedi: *"Su cosa abbiamo lavorato la settimana scorsa?"*
 
+
+<div align="center">
+<img src="../../demo.gif" alt="MemoTrail Demo" width="800">
+<br>
+<sub>Install → Connect → See stats → Search past sessions → Save memory → Duplicate &amp; contradiction detection</sub>
+</div>
+
 ## Come Funziona
 
 | Passo | Cosa succede |

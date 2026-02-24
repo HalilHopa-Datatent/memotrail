@@ -65,6 +65,13 @@ claude mcp add memotrail -- memotrail serve
 
 Αυτό ήταν. Το MemoTrail ευρετηριάζει αυτόματα το ιστορικό σας κατά την πρώτη εκκίνηση.
 
+
+<div align="center">
+<img src="../../demo.gif" alt="MemoTrail Demo" width="800">
+<br>
+<sub>Install → Connect → See stats → Search past sessions → Save memory → Duplicate &amp; contradiction detection</sub>
+</div>
+
 ## Πώς Λειτουργεί
 
 | Βήμα | Τι συμβαίνει |

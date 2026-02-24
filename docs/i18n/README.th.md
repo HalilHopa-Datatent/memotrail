@@ -65,6 +65,13 @@ claude mcp add memotrail -- memotrail serve
 
 แค่นั้น MemoTrail จะจัดทำดัชนีประวัติของคุณโดยอัตโนมัติเมื่อเปิดใช้ครั้งแรก
 
+
+<div align="center">
+<img src="../../demo.gif" alt="MemoTrail Demo" width="800">
+<br>
+<sub>Install → Connect → See stats → Search past sessions → Save memory → Duplicate &amp; contradiction detection</sub>
+</div>
+
 ## วิธีการทำงาน
 
 | ขั้นตอน | สิ่งที่เกิดขึ้น |

@@ -70,6 +70,13 @@ claude mcp add memotrail -- memotrail serve
 Eso es todo. MemoTrail indexa automáticamente tu historial en el primer inicio.
 Comienza una nueva sesión y pregunta: *"¿En qué trabajamos la semana pasada?"*
 
+
+<div align="center">
+<img src="../../demo.gif" alt="MemoTrail Demo" width="800">
+<br>
+<sub>Install → Connect → See stats → Search past sessions → Save memory → Duplicate &amp; contradiction detection</sub>
+</div>
+
 ## Cómo Funciona
 
 | Paso | Que sucede |

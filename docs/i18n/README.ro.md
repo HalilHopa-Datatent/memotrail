@@ -70,6 +70,13 @@ claude mcp add memotrail -- memotrail serve
 Asta e tot. MemoTrail indexează automat istoricul tău la prima pornire.
 Începe o sesiune nouă și întreabă: *"La ce am lucrat săptămâna trecută?"*
 
+
+<div align="center">
+<img src="../../demo.gif" alt="MemoTrail Demo" width="800">
+<br>
+<sub>Install → Connect → See stats → Search past sessions → Save memory → Duplicate &amp; contradiction detection</sub>
+</div>
+
 ## Cum Funcționează
 
 | Pas | Ce se întâmplă |

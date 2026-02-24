@@ -68,6 +68,13 @@ claude mcp add memotrail -- memotrail serve
 끝입니다. MemoTrail은 첫 실행 시 자동으로 히스토리를 인덱싱합니다.
 새 세션을 시작하고 물어보세요: *"지난주에 무엇을 작업했나요?"*
 
+
+<div align="center">
+<img src="../../demo.gif" alt="MemoTrail Demo" width="800">
+<br>
+<sub>Install → Connect → See stats → Search past sessions → Save memory → Duplicate &amp; contradiction detection</sub>
+</div>
+
 ## 작동 방식
 
 | 단계 | 무슨 일이 일어나는가 |

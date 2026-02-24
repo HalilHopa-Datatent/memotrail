@@ -65,6 +65,13 @@ claude mcp add memotrail -- memotrail serve
 
 بس۔ MemoTrail پہلی بار لانچ پر آپ کی تاریخ کو خودکار طور پر انڈیکس کرتا ہے۔
 
+
+<div align="center">
+<img src="../../demo.gif" alt="MemoTrail Demo" width="800">
+<br>
+<sub>Install → Connect → See stats → Search past sessions → Save memory → Duplicate &amp; contradiction detection</sub>
+</div>
+
 ## یہ کیسے کام کرتا ہے
 
 | مرحلہ | کیا ہوتا ہے |

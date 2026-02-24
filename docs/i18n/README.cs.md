@@ -70,6 +70,13 @@ claude mcp add memotrail -- memotrail serve
 To je vše. MemoTrail automaticky indexuje vaši historii při prvním spuštění.
 Začněte novou relaci a zeptejte se: *"Na čem jsme pracovali minulý týden?"*
 
+
+<div align="center">
+<img src="../../demo.gif" alt="MemoTrail Demo" width="800">
+<br>
+<sub>Install → Connect → See stats → Search past sessions → Save memory → Duplicate &amp; contradiction detection</sub>
+</div>
+
 ## Jak to Funguje
 
 | Krok | Co se děje |

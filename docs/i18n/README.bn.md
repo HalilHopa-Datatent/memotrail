@@ -65,6 +65,13 @@ claude mcp add memotrail -- memotrail serve
 
 এটাই সব। MemoTrail প্রথম লঞ্চে আপনার ইতিহাস স্বয়ংক্রিয়ভাবে ইনডেক্স করে।
 
+
+<div align="center">
+<img src="../../demo.gif" alt="MemoTrail Demo" width="800">
+<br>
+<sub>Install → Connect → See stats → Search past sessions → Save memory → Duplicate &amp; contradiction detection</sub>
+</div>
+
 ## কিভাবে কাজ করে
 
 | ধাপ | কী ঘটে |

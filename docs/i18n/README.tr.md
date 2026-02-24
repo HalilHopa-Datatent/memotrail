@@ -70,6 +70,13 @@ claude mcp add memotrail -- memotrail serve
 Bu kadar. MemoTrail ilk açılışta geçmişinizi otomatik olarak indeksler.
 Yeni bir oturum başlatın ve sorun: *"Geçen hafta ne üzerinde çalıştık?"*
 
+
+<div align="center">
+<img src="../../demo.gif" alt="MemoTrail Demo" width="800">
+<br>
+<sub>Install → Connect → See stats → Search past sessions → Save memory → Duplicate &amp; contradiction detection</sub>
+</div>
+
 ## Nasıl Çalışır
 
 | Adım | Ne olur |

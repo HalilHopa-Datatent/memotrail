@@ -68,6 +68,13 @@ claude mcp add memotrail -- memotrail serve
 هذا كل شيء. يقوم MemoTrail بفهرسة سجلك تلقائياً عند أول تشغيل.
 ابدأ جلسة جديدة واسأل: *"ماذا عملنا الأسبوع الماضي؟"*
 
+
+<div align="center">
+<img src="../../demo.gif" alt="MemoTrail Demo" width="800">
+<br>
+<sub>Install → Connect → See stats → Search past sessions → Save memory → Duplicate &amp; contradiction detection</sub>
+</div>
+
 ## كيف يعمل
 
 | الخطوة | ماذا يحدث |
