@@ -7,11 +7,11 @@ pip() {
     if [ "$1" = "install" ] && [ "$2" = "memotrail" ]; then
         echo "Collecting memotrail"
         sleep 0.3
-        echo "  Downloading memotrail-0.4.0-py3-none-any.whl (42 kB)"
+        echo "  Downloading memotrail-0.4.1-py3-none-any.whl (42 kB)"
         sleep 0.2
         echo "Installing collected packages: memotrail"
         sleep 0.3
-        echo "Successfully installed memotrail-0.4.0"
+        echo "Successfully installed memotrail-0.4.1"
     fi
 }
 
